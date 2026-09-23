@@ -1,6 +1,6 @@
 import Foundation
 
-/// Credential-routing hardening (R-004): `URLSession` follows HTTP
+/// Credential-routing hardening: `URLSession` follows HTTP
 /// redirects and re-sends the `Authorization` header to whatever origin a
 /// 3xx response names — that is the platform DEFAULT, not an opt-in, and it
 /// must be overridden. This delegate refuses every redirect by calling the

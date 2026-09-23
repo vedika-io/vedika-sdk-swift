@@ -9,8 +9,7 @@ import Foundation
 /// let score = try await client.vastu.vastuScore("overall", params: ["rooms": rooms])
 /// ```
 ///
-/// First deliverable scope (see
-/// docs/ops/2026-08-11-vastu-native-adapters-plan.md section 3.4): the Vastu
+/// First deliverable scope: the Vastu
 /// domain only, not the full 23-domain surface `sdks/flutter` covers. New
 /// domains get their own `*Service` class alongside `VastuService`, exposed
 /// as a new property here — this class's own shape (construction, origin
@@ -55,8 +54,8 @@ public final class VedikaClient {
     public private(set) lazy var vastu: VastuService = VastuService(client: self)
 
     /// The underlying `URLSession`. Redirect-following is refused via
-    /// `RedirectRefusingDelegate` on purpose (credential-routing hardening,
-    /// R-004): the platform default would re-send `Authorization` to
+    /// `RedirectRefusingDelegate` on purpose (credential-routing
+    /// hardening): the platform default would re-send `Authorization` to
     /// whatever origin a 3xx response names, leaking the API key to a
     /// different host. With redirects refused, a 3xx comes back from
     /// `session.data(for:)` as an ordinary `HTTPURLResponse` (`300..399`)
@@ -239,7 +238,7 @@ public final class VedikaClient {
                 retryAfterSeconds: retryAfter
             )
         case 300..<400:
-            // Credential-routing (R-004): redirects are refused (see
+            // Credential-routing: redirects are refused (see
             // `RedirectRefusingDelegate`), so the API key is never forwarded
             // to the redirect destination. A 3xx from the API is unexpected
             // and surfaced as an error rather than chased.

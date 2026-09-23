@@ -142,6 +142,33 @@ public final class VastuArView: UIViewController {
     /// `reportedNoLocationOnce`, to avoid flooding the JS bridge.
     private var reportedTrueHeadingGapOnce = false
 
+    /// The most recent valid sample, re-sent once the page is ready.
+    ///
+    /// 2026-09-23, found on a real iPhone 11 (Device Farm): Core Location sends
+    /// an initial heading at start and then only when the heading moves past
+    /// `headingFilter`. That first sample usually arrives before the page's
+    /// bridge exists, so it was dropped, and a phone held still showed no
+    /// compass at all until it was moved. The page now gets the last sample
+    /// again after it finishes loading.
+    private var lastSample: (degrees: Double, accuracy: Double, frame: String)?
+
+    /// Reports an invalid or uncalibrated reading once per episode, like
+    /// `VastuArView.kt`'s `reportedUnreliableOnce`. With `kCLHeadingFilterNone`
+    /// an uncalibrated compass (headingAccuracy < 0) reports ~60 times a
+    /// second; on a real iPhone 11 that sent 855 identical errors in 14 s.
+    private var reportedInvalidOnce = false
+
+    /// The invalid-reading error while that episode lasts. Like `lastSample`,
+    /// it usually fires before the page can hear it, so it is re-sent once the
+    /// page has loaded.
+    private var pendingInvalidError: String?
+
+    /// Same ~20 Hz ceiling as `VastuArView.kt`'s `MIN_PUSH_INTERVAL_MS`: with
+    /// `headingFilter = kCLHeadingFilterNone` Core Location reports every
+    /// change, and each push crosses the JavaScript bridge.
+    private var lastPushAt: TimeInterval = 0
+    private static let minPushInterval: TimeInterval = 0.05
+
     /// Called when a custom page fails to load. The default runtime is bundled.
     public var onLoadFailed: (() -> Void)?
 
@@ -190,6 +217,9 @@ public final class VastuArView: UIViewController {
         webView.uiDelegate = self
         webView.navigationDelegate = self
         locationManager.delegate = self
+        // Every change, not only moves past 1 degree: a phone held still must
+        // still feed the page (parity with Android's continuous sensor stream).
+        locationManager.headingFilter = kCLHeadingFilterNone
     }
 
     @available(*, unavailable, message: "VastuArView does not support storyboard/XIB instantiation -- use init(arURL:).")
@@ -209,20 +239,19 @@ public final class VastuArView: UIViewController {
         } else { webView.load(URLRequest(url: arURL)) }
     }
 
+    /// Refuses to render a runtime whose bytes do not match its own manifest.
+    ///
+    /// The check itself lives in the platform-free `VastuRuntimeBundle` so the
+    /// bytes this package ships are asserted by `swift test` on macOS as well
+    /// (ar#20) — inline here it was uncompiled outside iOS and therefore
+    /// untested. Behaviour is unchanged: a corrupt offline runtime still stops
+    /// the app rather than being displayed, and the thrown `Failure` now names
+    /// which resource and which digest, instead of one opaque message.
     private func verifyRuntime() {
-        let directory = arURL.deletingLastPathComponent()
-        guard let data = try? Data(contentsOf: directory.appendingPathComponent("manifest.json")),
-              let manifest = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              manifest["formatVersion"] as? Int == 1,
-              let files = manifest["files"] as? [String: String],
-              Set(files.keys) == Set(["index.html", "runtime.js", "hud-mandala.png"]) else {
-            preconditionFailure("Missing or invalid bundled Vastu runtime manifest")
-        }
-        for (name, digest) in files {
-            guard let bytes = try? Data(contentsOf: directory.appendingPathComponent(name)),
-                  SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined() == digest else {
-                preconditionFailure("Missing or corrupt bundled Vastu runtime resource")
-            }
+        do {
+            try VastuRuntimeBundle.verify(in: arURL.deletingLastPathComponent())
+        } catch {
+            preconditionFailure("Bundled Vastu runtime failed verification: \(error)")
         }
     }
 
@@ -340,15 +369,26 @@ extension VastuArView: CLLocationManagerDelegate {
             magneticHeading: newHeading.magneticHeading,
             accuracy: newHeading.headingAccuracy
         ) else {
-            pushError("Compass reading is invalid or too uncertain. Hold steady and calibrate the device.")
+            if !reportedInvalidOnce {
+                reportedInvalidOnce = true
+                let message = "Compass reading is invalid or too uncertain. Hold steady and calibrate the device."
+                pendingInvalidError = message
+                pushError(message)
+            }
             return
         }
+        reportedInvalidOnce = false
+        pendingInvalidError = nil
         if sample.frame == "true" {
             reportedTrueHeadingGapOnce = false
         } else if !reportedTrueHeadingGapOnce {
             reportedTrueHeadingGapOnce = true
             pushError("True north is unavailable. Showing magnetic north until a location fix resolves it.")
         }
+        lastSample = (sample.degrees, sample.accuracy, sample.frame)
+        let now = Date().timeIntervalSince1970
+        guard now - lastPushAt >= Self.minPushInterval else { return }
+        lastPushAt = now
         pushSample(headingDeg: sample.degrees, accuracyDeg: sample.accuracy, frame: sample.frame)
     }
 
@@ -373,6 +413,24 @@ extension VastuArView: WKNavigationDelegate {
         decisionHandler(navigationResponse.isForMainFrame && VastuArPolicy.trustedPage(navigationResponse.response.url, expected: arURL) ? .allow : .cancel)
     }
 
+
+    /// Re-sends the current state once the page has loaded: the pending
+    /// invalid-reading error, or else the last heading (see `lastSample`).
+    /// The page mounts its compass after `load`, so the sample goes out at a
+    /// few short delays; a push before the page is listening is a no-op.
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard !showingLoadFailure else { return }
+        for delay in [0.3, 1.0, 2.5] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self, self.headingActive else { return }
+                if let error = self.pendingInvalidError {
+                    self.pushError(error)
+                } else if let last = self.lastSample {
+                    self.pushSample(headingDeg: last.degrees, accuracyDeg: last.accuracy, frame: last.frame)
+                }
+            }
+        }
+    }
 
     /// Offline/navigation-failure fix (b2c#23 / ar#20). Covers a failure
     /// that happens BEFORE any content committed (typical of "no network at
@@ -412,7 +470,7 @@ extension VastuArView: WKUIDelegate {
     /// `.microphone`/`.cameraAndMicrophone`; the page never requests audio)
     /// from the configured AR host are granted. Mirrors
     /// `VastuArView.kt`'s `onPermissionRequest` origin check exactly, same
-    /// R-004-era credential-routing discipline this repo already applies to
+    /// credential-routing discipline this repo already applies to
     /// the SDK's own HTTP client (`RedirectRefusingDelegate.swift`) --
     /// applied here to a WebView permission grant instead of a redirect.
     ///

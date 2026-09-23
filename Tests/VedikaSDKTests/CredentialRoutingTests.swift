@@ -2,7 +2,7 @@ import XCTest
 
 @testable import VedikaSDK
 
-/// Credential-routing hardening (R-004), ported from
+/// Credential-routing hardening, ported from
 /// `sdks/android/src/test/kotlin/io/vedika/sdk/CredentialRoutingTest.kt`
 /// (itself ported from `sdks/flutter/test/credential_routing_test.dart`)
 /// onto a minimal dependency-free loopback HTTP server
