@@ -29,7 +29,7 @@ final class VastuScanTests: XCTestCase {
         defer { server.stop() }
         server.enqueue(.init(body: #"{"success":true,"data":{"scans":[],"nextCursor":null}}"#))
         let client = try VedikaClient(apiKey: "vk_test", baseURL: server.baseURL)
-        let result = try await client.vastu.vastuScansList(VastuScansListRequest(requestId: "request-00000001", limit: 1), idempotencyKey: "retained-scan-list")
+        let result = try await client.vastu.vastuScansList(VastuScansListRequest(requestId: "request-00000001", limit: 1))
         XCTAssertTrue(result.success)
         XCTAssertNil(result.billing)
         XCTAssertNil(result.meta)
@@ -37,8 +37,21 @@ final class VastuScanTests: XCTestCase {
         let wire = try XCTUnwrap(server.requests().first)
         XCTAssertEqual(wire.method, "POST")
         XCTAssertEqual(wire.path, "/v2/astrology/vastu/scans/list")
-        XCTAssertEqual(wire.headers.first { $0.key.lowercased() == "idempotency-key" }?.value, "retained-scan-list")
+        // The server answers 422 to any retry header on scan operations.
+        XCTAssertNil(wire.headers.first { $0.key.lowercased() == "idempotency-key" })
         let body = try JSONSerialization.jsonObject(with: wire.body) as! [String: Any]
         XCTAssertTrue(NSDictionary(dictionary: body).isEqual(to: ["requestId": "request-00000001", "limit": 1]))
+    }
+
+    func testScanOperationsRefuseACallerIdempotencyKeyBeforeSending() async throws {
+        let client = try VedikaClient(apiKey: "vk_test")
+        do {
+            _ = try await client.vastu.vastuScansList(VastuScansListRequest(requestId: "request-00000001", limit: 1), idempotencyKey: "retained-scan-list")
+            XCTFail("a caller key on a scan operation must be refused")
+        } catch let error as VedikaApiError {
+            XCTAssertTrue(error.message.contains("requestId"))
+        }
+        XCTAssertTrue(usesBodyIdentity("/v2/vastu/scans/timelapse"))
+        XCTAssertFalse(usesBodyIdentity("/v2/vastu/assessments"))
     }
 }

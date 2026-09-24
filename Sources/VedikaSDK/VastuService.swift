@@ -2826,6 +2826,15 @@ public struct VastuAssessmentDataSourcesItem {
     public var tradition: String? { (raw["tradition"] as? String) }
 }
 
+public struct VastuAssessmentDataNotAssessedItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var room: String { (raw["room"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var reason: String { (raw["reason"] as? String)! }
+    public var graded: Bool { vastuBool(raw["graded"])! }
+}
+
 public struct VastuCatalogReferenceDataDefectsItem {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -2885,6 +2894,15 @@ public struct VastuComplianceIndexDataScoring {
     public var uniquePlacementCount: Int { vastuInt(raw["uniquePlacementCount"])! }
     public var duplicatePlacementCount: Int { vastuInt(raw["duplicatePlacementCount"])! }
     public var verified: Bool { vastuBool(raw["verified"])! }
+}
+
+public struct VastuComplianceIndexDataNotAssessedItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var room: String { (raw["room"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var reason: String { (raw["reason"] as? String)! }
+    public var graded: Bool { vastuBool(raw["graded"])! }
 }
 
 public struct VastuDetailedFloorPlanAuditDataDefectsItemIssueParams {
@@ -2967,6 +2985,15 @@ public struct VastuDetailedFloorPlanAuditDataCompleteness {
     public var projectedCellCount: Int { vastuInt(raw["projectedCellCount"])! }
     public var physicalCoverageVerified: Bool { vastuBool(raw["physicalCoverageVerified"])! }
     public var note: String { (raw["note"] as? String)! }
+}
+
+public struct VastuDetailedFloorPlanAuditDataNotAssessedItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var room: String { (raw["room"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var reason: String { (raw["reason"] as? String)! }
+    public var graded: Bool { vastuBool(raw["graded"])! }
 }
 
 public struct VastuDirectionsReferenceDataDirectionsItem {
@@ -3060,6 +3087,15 @@ public struct VastuFloorPlanAuditDataTextParse {
     public var parsedClauseCount: Int { vastuInt(raw["parsedClauseCount"])! }
 }
 
+public struct VastuFloorPlanAuditDataNotAssessedItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var room: String { (raw["room"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var reason: String { (raw["reason"] as? String)! }
+    public var graded: Bool { vastuBool(raw["graded"])! }
+}
+
 public struct VastuMandalaReferenceDataZonesItem {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -3143,6 +3179,15 @@ public struct VastuOverallScoreDataScoring {
     public var verified: Bool { vastuBool(raw["verified"])! }
 }
 
+public struct VastuOverallScoreDataNotAssessedItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var room: String { (raw["room"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var reason: String { (raw["reason"] as? String)! }
+    public var graded: Bool { vastuBool(raw["graded"])! }
+}
+
 public struct VastuPlanAuditDataRoomByRoomItem {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -3204,6 +3249,15 @@ public struct VastuPlanAuditDataArtifact {
     public var content: String { (raw["content"] as? String)! }
 }
 
+public struct VastuPlanAuditDataNotAssessedItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var room: String { (raw["room"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var reason: String { (raw["reason"] as? String)! }
+    public var graded: Bool { vastuBool(raw["graded"])! }
+}
+
 public struct VastuRemedyComparisonDataBeforeDefectsItem {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -3254,6 +3308,15 @@ public struct VastuRemedyComparisonDataAfter {
     public var defects: [VastuRemedyComparisonDataAfterDefectsItem]? { (raw["defects"] as? [[String: Any]])?.map { VastuRemedyComparisonDataAfterDefectsItem(raw: $0) } }
 }
 
+public struct VastuRemedyComparisonDataNotAssessedItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var room: String { (raw["room"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var reason: String { (raw["reason"] as? String)! }
+    public var graded: Bool { vastuBool(raw["graded"])! }
+}
+
 public struct VastuSpecializedAuditDataFindingsItem {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -3275,6 +3338,15 @@ public struct VastuSpecializedAuditDataFindingsItem {
     public var classification: String? { (raw["classification"] as? String) }
     public var tradition: String? { (raw["tradition"] as? String) }
     public var source: String? { (raw["source"] as? String) }
+}
+
+public struct VastuSpecializedAuditDataNotAssessedItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var room: String { (raw["room"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var reason: String { (raw["reason"] as? String)! }
+    public var graded: Bool { vastuBool(raw["graded"])! }
 }
 
 public struct VastuSunPathDataInput {
@@ -3327,6 +3399,15 @@ public struct VastuZoneWiseScoreDataScoring {
     public var uniquePlacementCount: Int { vastuInt(raw["uniquePlacementCount"])! }
     public var duplicatePlacementCount: Int { vastuInt(raw["duplicatePlacementCount"])! }
     public var verified: Bool { vastuBool(raw["verified"])! }
+}
+
+public struct VastuZoneWiseScoreDataNotAssessedItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var room: String { (raw["room"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var reason: String { (raw["reason"] as? String)! }
+    public var graded: Bool { vastuBool(raw["graded"])! }
 }
 
 public struct VastuArAnchorRecommendationsData: VastuData {
@@ -3501,6 +3582,7 @@ public struct VastuAssessmentData: VastuData {
     public var charged: Bool? { vastuBool(raw["charged"]) }
     public var meta: [String: Any] { (raw["meta"] as? [String: Any])! }
     public var listingId: Any? { (raw["listingId"] is NSNull ? nil : raw["listingId"]) }
+    public var notAssessed: [VastuAssessmentDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuAssessmentDataNotAssessedItem(raw: $0) } }
 }
 
 public struct VastuAuspiciousFacingData: VastuData {
@@ -3580,8 +3662,8 @@ public struct VastuCatalogReferenceData: VastuData {
 public struct VastuComplianceIndexData: VastuData {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
-    public var score: Double { vastuDouble(raw["score"])! }
-    public var complianceIndex: String { (raw["complianceIndex"] as? String)! }
+    public var score: Double? { vastuDouble(raw["score"]) }
+    public var complianceIndex: String? { (raw["complianceIndex"] as? String) }
     public var drivingDefects: [VastuComplianceIndexDataDrivingDefectsItem] { (raw["drivingDefects"] as! [[String: Any]]).map { VastuComplianceIndexDataDrivingDefectsItem(raw: $0) } }
     public var sources: [[String: Any]] { (raw["sources"] as? [[String: Any]])! }
     public var verified: Bool { vastuBool(raw["verified"])! }
@@ -3598,13 +3680,15 @@ public struct VastuComplianceIndexData: VastuData {
     public var tradition: String? { (raw["tradition"] as? String) }
     public var verdict: String? { (raw["verdict"] as? String) }
     public var scoring: VastuComplianceIndexDataScoring { VastuComplianceIndexDataScoring(raw: raw["scoring"] as! [String: Any]) }
+    public var notAssessed: [VastuComplianceIndexDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuComplianceIndexDataNotAssessedItem(raw: $0) } }
+    public var scoreNote: String? { (raw["scoreNote"] as? String) }
 }
 
 public struct VastuDetailedFloorPlanAuditData: VastuData {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
-    public var score: Double { vastuDouble(raw["score"])! }
-    public var grade: String { (raw["grade"] as? String)! }
+    public var score: Double? { vastuDouble(raw["score"]) }
+    public var grade: String? { (raw["grade"] as? String) }
     public var totalRooms: Int { vastuInt(raw["totalRooms"])! }
     public var prescribedCount: Int { vastuInt(raw["prescribedCount"])! }
     public var defects: [VastuDetailedFloorPlanAuditDataDefectsItem] { (raw["defects"] as! [[String: Any]]).map { VastuDetailedFloorPlanAuditDataDefectsItem(raw: $0) } }
@@ -3619,6 +3703,8 @@ public struct VastuDetailedFloorPlanAuditData: VastuData {
     public var gradeScale: [String: Any]? { (raw["gradeScale"] as? [String: Any]) }
     public var scoring: VastuDetailedFloorPlanAuditDataScoring { VastuDetailedFloorPlanAuditDataScoring(raw: raw["scoring"] as! [String: Any]) }
     public var completeness: VastuDetailedFloorPlanAuditDataCompleteness { VastuDetailedFloorPlanAuditDataCompleteness(raw: raw["completeness"] as! [String: Any]) }
+    public var notAssessed: [VastuDetailedFloorPlanAuditDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuDetailedFloorPlanAuditDataNotAssessedItem(raw: $0) } }
+    public var scoreNote: String? { (raw["scoreNote"] as? String) }
 }
 
 public struct VastuDirectionCorrectData: VastuData {
@@ -3626,7 +3712,7 @@ public struct VastuDirectionCorrectData: VastuData {
     public init(raw: [String: Any]) { self.raw = raw }
     public var input: [String: Any] { (raw["input"] as? [String: Any])! }
     public var magneticBearingDeg: Double? { vastuDouble(raw["magneticBearingDeg"]) }
-    public var declinationDeg: Double { vastuDouble(raw["declinationDeg"])! }
+    public var declinationDeg: Double? { vastuDouble(raw["declinationDeg"]) }
     public var trueBearingDeg: Double? { vastuDouble(raw["trueBearingDeg"]) }
     public var correctedZone: String { (raw["correctedZone"] as? String)! }
     public var sources: [String] { (raw["sources"] as? [String])! }
@@ -3641,7 +3727,7 @@ public struct VastuDirectionDeclinationData: VastuData {
     public var lat: Double { vastuDouble(raw["lat"])! }
     public var lon: Double { vastuDouble(raw["lon"])! }
     public var date: String { (raw["date"] as? String)! }
-    public var declinationDeg: Double { vastuDouble(raw["declinationDeg"])! }
+    public var declinationDeg: Double? { vastuDouble(raw["declinationDeg"]) }
     public var interpretation: String { (raw["interpretation"] as? String)! }
     public var gridEpoch: String { (raw["gridEpoch"] as? String)! }
     public var sources: [String] { (raw["sources"] as? [String])! }
@@ -3746,8 +3832,8 @@ public struct VastuEntranceRecommendData: VastuData {
 public struct VastuFloorPlanAuditData: VastuData {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
-    public var score: Double { vastuDouble(raw["score"])! }
-    public var grade: String { (raw["grade"] as? String)! }
+    public var score: Double? { vastuDouble(raw["score"]) }
+    public var grade: String? { (raw["grade"] as? String) }
     public var totalRooms: Int { vastuInt(raw["totalRooms"])! }
     public var prescribedCount: Int { vastuInt(raw["prescribedCount"])! }
     public var defects: [VastuFloorPlanAuditDataDefectsItem] { (raw["defects"] as! [[String: Any]]).map { VastuFloorPlanAuditDataDefectsItem(raw: $0) } }
@@ -3758,6 +3844,8 @@ public struct VastuFloorPlanAuditData: VastuData {
     public var gradeScale: [String: Any]? { (raw["gradeScale"] as? [String: Any]) }
     public var scoring: VastuFloorPlanAuditDataScoring { VastuFloorPlanAuditDataScoring(raw: raw["scoring"] as! [String: Any]) }
     public var textParse: VastuFloorPlanAuditDataTextParse? { (raw["textParse"] as? [String: Any]).map { VastuFloorPlanAuditDataTextParse(raw: $0) } }
+    public var notAssessed: [VastuFloorPlanAuditDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuFloorPlanAuditDataNotAssessedItem(raw: $0) } }
+    public var scoreNote: String? { (raw["scoreNote"] as? String) }
 }
 
 public struct VastuFloorRulesData: VastuData {
@@ -3892,8 +3980,8 @@ public struct VastuObstructionData: VastuData {
 public struct VastuOverallScoreData: VastuData {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
-    public var score: Double { vastuDouble(raw["score"])! }
-    public var grade: String { (raw["grade"] as? String)! }
+    public var score: Double? { vastuDouble(raw["score"]) }
+    public var grade: String? { (raw["grade"] as? String) }
     public var placements: [VastuOverallScoreDataPlacementsItem] { (raw["placements"] as! [[String: Any]]).map { VastuOverallScoreDataPlacementsItem(raw: $0) } }
     public var sources: [[String: Any]] { (raw["sources"] as? [[String: Any]])! }
     public var verified: Bool { vastuBool(raw["verified"])! }
@@ -3910,6 +3998,8 @@ public struct VastuOverallScoreData: VastuData {
     public var tradition: String? { (raw["tradition"] as? String) }
     public var verdict: String? { (raw["verdict"] as? String) }
     public var scoring: VastuOverallScoreDataScoring { VastuOverallScoreDataScoring(raw: raw["scoring"] as! [String: Any]) }
+    public var notAssessed: [VastuOverallScoreDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuOverallScoreDataNotAssessedItem(raw: $0) } }
+    public var scoreNote: String? { (raw["scoreNote"] as? String) }
 }
 
 public struct VastuPlacementData: VastuData {
@@ -3948,8 +4038,8 @@ public struct VastuPlanAuditData: VastuData {
     public var input: [String: Any] { (raw["input"] as? [String: Any])! }
     public var facing: [String: Any] { (raw["facing"] as? [String: Any])! }
     public var plotShape: [String: Any] { (raw["plotShape"] as? [String: Any])! }
-    public var overallScore: Double { vastuDouble(raw["overallScore"])! }
-    public var grade: String { (raw["grade"] as? String)! }
+    public var overallScore: Double? { vastuDouble(raw["overallScore"]) }
+    public var grade: String? { (raw["grade"] as? String) }
     public var summary: String { (raw["summary"] as? String)! }
     public var zoneCompliance: [[String: Any]] { (raw["zoneCompliance"] as? [[String: Any]])! }
     public var roomByRoom: [VastuPlanAuditDataRoomByRoomItem] { (raw["roomByRoom"] as! [[String: Any]]).map { VastuPlanAuditDataRoomByRoomItem(raw: $0) } }
@@ -3964,6 +4054,8 @@ public struct VastuPlanAuditData: VastuData {
     public var gradeLabel: String? { (raw["gradeLabel"] as? String) }
     public var scoreDisclaimer: String? { (raw["scoreDisclaimer"] as? String) }
     public var artifact: VastuPlanAuditDataArtifact? { (raw["artifact"] as? [String: Any]).map { VastuPlanAuditDataArtifact(raw: $0) } }
+    public var notAssessed: [VastuPlanAuditDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuPlanAuditDataNotAssessedItem(raw: $0) } }
+    public var scoreNote: String? { (raw["scoreNote"] as? String) }
 }
 
 public struct VastuPlanGenerateData: VastuData {
@@ -4119,9 +4211,9 @@ public struct VastuRemedyComparisonData: VastuData {
     public init(raw: [String: Any]) { self.raw = raw }
     public var before: VastuRemedyComparisonDataBefore { VastuRemedyComparisonDataBefore(raw: raw["before"] as! [String: Any]) }
     public var after: VastuRemedyComparisonDataAfter { VastuRemedyComparisonDataAfter(raw: raw["after"] as! [String: Any]) }
-    public var scoreDelta: Double { vastuDouble(raw["scoreDelta"])! }
+    public var scoreDelta: Double? { vastuDouble(raw["scoreDelta"]) }
     public var scoring: [String: Any] { (raw["scoring"] as? [String: Any])! }
-    public var verdict: String { (raw["verdict"] as? String)! }
+    public var verdict: String? { (raw["verdict"] as? String) }
     public var remediesApplied: [[String: Any]] { (raw["remediesApplied"] as? [[String: Any]])! }
     public var roomChanges: [[String: Any]] { (raw["roomChanges"] as? [[String: Any]])! }
     public var sources: [String] { (raw["sources"] as? [String])! }
@@ -4130,6 +4222,7 @@ public struct VastuRemedyComparisonData: VastuData {
     public var system: String? { (raw["system"] as? String) }
     public var tradition: String? { (raw["tradition"] as? String) }
     public var verified: Bool? { vastuBool(raw["verified"]) }
+    public var notAssessed: [VastuRemedyComparisonDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuRemedyComparisonDataNotAssessedItem(raw: $0) } }
 }
 
 public struct VastuRoadOrientationData: VastuData {
@@ -4262,8 +4355,8 @@ public struct VastuSpecializedAuditData: VastuData {
     public var system: String { (raw["system"] as? String)! }
     public var method: String { (raw["method"] as? String)! }
     public var buildingType: String { (raw["buildingType"] as? String)! }
-    public var score: Double { vastuDouble(raw["score"])! }
-    public var grade: String { (raw["grade"] as? String)! }
+    public var score: Double? { vastuDouble(raw["score"]) }
+    public var grade: String? { (raw["grade"] as? String) }
     public var scoringBasis: String { (raw["scoringBasis"] as? String)! }
     public var auditedRooms: Int { vastuInt(raw["auditedRooms"])! }
     public var idealCount: Int { vastuInt(raw["idealCount"])! }
@@ -4276,23 +4369,29 @@ public struct VastuSpecializedAuditData: VastuData {
     public var provenance: [String: Any] { (raw["provenance"] as? [String: Any])! }
     public var meta: [String: Any] { (raw["meta"] as? [String: Any])! }
     public var buildingDirection: [String: Any]? { (raw["buildingDirection"] as? [String: Any]) }
+    public var notAssessed: [VastuSpecializedAuditDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuSpecializedAuditDataNotAssessedItem(raw: $0) } }
+    public var scoreNote: String? { (raw["scoreNote"] as? String) }
 }
 
 public struct VastuSunPathData: VastuData {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
     public var input: VastuSunPathDataInput { VastuSunPathDataInput(raw: raw["input"] as! [String: Any]) }
-    public var sunriseUtc: String { (raw["sunriseUtc"] as? String)! }
-    public var sunriseAzimuthDeg: Double { vastuDouble(raw["sunriseAzimuthDeg"])! }
-    public var solarNoonUtc: String { (raw["solarNoonUtc"] as? String)! }
-    public var solarNoonAzimuthDeg: Double { vastuDouble(raw["solarNoonAzimuthDeg"])! }
-    public var solarNoonElevationDeg: Double { vastuDouble(raw["solarNoonElevationDeg"])! }
-    public var sunsetUtc: String { (raw["sunsetUtc"] as? String)! }
-    public var sunsetAzimuthDeg: Double { vastuDouble(raw["sunsetAzimuthDeg"])! }
-    public var declinationDeg: Double { vastuDouble(raw["declinationDeg"])! }
+    public var sunriseUtc: String? { (raw["sunriseUtc"] as? String) }
+    public var sunriseAzimuthDeg: Double? { vastuDouble(raw["sunriseAzimuthDeg"]) }
+    public var solarNoonUtc: String? { (raw["solarNoonUtc"] as? String) }
+    public var solarNoonAzimuthDeg: Double? { vastuDouble(raw["solarNoonAzimuthDeg"]) }
+    public var solarNoonElevationDeg: Double? { vastuDouble(raw["solarNoonElevationDeg"]) }
+    public var sunsetUtc: String? { (raw["sunsetUtc"] as? String) }
+    public var sunsetAzimuthDeg: Double? { vastuDouble(raw["sunsetAzimuthDeg"]) }
+    public var declinationDeg: Double? { vastuDouble(raw["declinationDeg"]) }
     public var arc: [[String: Any]] { (raw["arc"] as? [[String: Any]])! }
     public var sources: [String] { (raw["sources"] as? [String])! }
     public var verified: Bool { vastuBool(raw["verified"])! }
+    public var dayStatus: String? { (raw["dayStatus"] as? String) }
+    public var note: String? { (raw["note"] as? String) }
+    public var noonUtc: String? { (raw["noonUtc"] as? String) }
+    public var noonElevationDeg: Double? { vastuDouble(raw["noonElevationDeg"]) }
 }
 
 public struct VastuTimingData: VastuData {
@@ -4350,14 +4449,16 @@ public struct VastuZoneWiseScoreData: VastuData {
     public var input: [String: Any]? { (raw["input"] as? [String: Any]) }
     public var meta: [String: Any]? { (raw["meta"] as? [String: Any]) }
     public var method: String? { (raw["method"] as? String) }
-    public var overallGrade: String { (raw["overallGrade"] as? String)! }
-    public var overallScore: Double { vastuDouble(raw["overallScore"])! }
+    public var overallGrade: String? { (raw["overallGrade"] as? String) }
+    public var overallScore: Double? { vastuDouble(raw["overallScore"]) }
     public var strongestZone: String? { (raw["strongestZone"] as? String) }
     public var system: String? { (raw["system"] as? String) }
     public var tradition: String? { (raw["tradition"] as? String) }
     public var weakestZone: String? { (raw["weakestZone"] as? String) }
     public var zoneWeightingNote: String? { (raw["zoneWeightingNote"] as? String) }
     public var scoring: VastuZoneWiseScoreDataScoring { VastuZoneWiseScoreDataScoring(raw: raw["scoring"] as! [String: Any]) }
+    public var notAssessed: [VastuZoneWiseScoreDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuZoneWiseScoreDataNotAssessedItem(raw: $0) } }
+    public var scoreNote: String? { (raw["scoreNote"] as? String) }
 }
 
 public struct VastuTypedResponse<Data: VastuData> { public let success: Bool; public let data: Data; public let raw: [String: Any]; public var billing: [String: Any] { raw["billing"] as! [String: Any] } }

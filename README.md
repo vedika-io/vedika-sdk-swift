@@ -10,7 +10,7 @@ resolve a package from a subdirectory of a larger repository.
 ## Install
 
 ```swift
-.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.0.2")
+.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.0.3")
 ```
 
 Then add `VedikaSDK` to your target's dependencies.

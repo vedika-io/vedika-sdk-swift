@@ -16,7 +16,7 @@ import Foundation
 /// policy, `get`/`post` primitives, response handling) does not need to
 /// change to add one.
 public final class VedikaClient {
-    private static let sdkVersion = "vedika-swift/1.0.0"
+    private static let sdkVersion = "vedika-swift/1.0.3"
 
     /// Two extra attempts for network failures and 5xx responses. Either
     /// can follow a completed charge, so billed requests must retain their
@@ -174,7 +174,13 @@ public final class VedikaClient {
         guard let url = URL(string: config.baseURL + path) else {
             throw VedikaApiError("Invalid path: \(path)")
         }
-        let key = idempotencyKey ?? UUID().uuidString
+        // Scan save/retrieve/list/timelapse identify a retry by scanId or the
+        // body's requestId and answer 422 to any retry header, so none is sent.
+        let bodyIdentity = usesBodyIdentity(path)
+        if bodyIdentity && idempotencyKey != nil {
+            throw VedikaApiError("Scan operations use scanId or requestId in the body; do not pass an Idempotency-Key")
+        }
+        let key: String? = bodyIdentity ? nil : (idempotencyKey ?? UUID().uuidString)
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         for (key, value) in headers(idempotencyKey: key) {
@@ -185,8 +191,8 @@ public final class VedikaClient {
     }
 
     /// Runs `request`, retrying transient failures (see `maxRetries`).
-    /// Every POST and mounted billed Vastu GET carries an
-    /// `Idempotency-Key` (see `post` and `get`), so a retry of the exact same
+    /// Every POST (except the scan operations, whose identity is in the body)
+    /// and mounted billed Vastu GET carries an `Idempotency-Key` (see `post` and `get`), so a retry of the exact same
     /// `URLRequest` (same body, same key) cannot double-charge even if the
     /// first attempt's request actually reached the server before the
     /// network dropped the response.
@@ -262,4 +268,13 @@ public final class VedikaClient {
             )
         }
     }
+}
+
+private let scanPrefixes = ["/v2/vastu/scans/", "/v2/astrology/vastu/scans/"]
+private let bodyIdentityScanOps: Set<String> = ["save", "retrieve", "list", "delete", "timelapse"]
+
+/// True for the scan operations whose retry identity lives in the JSON body.
+func usesBodyIdentity(_ path: String) -> Bool {
+    let bare = String(path.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false).first ?? "")
+    return scanPrefixes.contains { bare.hasPrefix($0) && bodyIdentityScanOps.contains(String(bare.dropFirst($0.count))) }
 }
