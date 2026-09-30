@@ -8,6 +8,7 @@ import XCTest
 /// `.json` files) from within a monorepo checkout (same walk-up-and-skip
 /// pattern as the Kotlin port's `RoomCaptureFixtures.monorepoRoot()` — a
 /// published standalone package does not carry the fixture directory),
+/// falls back to the byte copy bundled with the test target,
 /// parses a fixture's `session` object into `RoomCaptureSession`, and
 /// asserts a built `VastuRoomCapture.dictionary` equals a fixture's
 /// `expected.capture` within 1e-6 for every numeric field.
@@ -28,8 +29,21 @@ enum RoomCaptureFixtures {
         }
     }
 
-    static func load(_ root: URL) throws -> [(name: String, json: [String: Any])] {
-        let dir = root.appendingPathComponent("sdks/fixtures/vastu-room-capture")
+    /// The canonical fixture directory when a monorepo checkout is reachable.
+    static var canonicalDirectory: URL? {
+        monorepoRoot()?.appendingPathComponent("sdks/fixtures/vastu-room-capture")
+    }
+
+    /// The byte copy bundled with the test target, so a standalone checkout of
+    /// the published package runs these tests instead of skipping them.
+    static var bundledDirectory: URL? {
+        Bundle.module.url(forResource: "RoomCaptureFixtures", withExtension: nil)
+    }
+
+    /// Canonical copy first, bundled copy otherwise.
+    static var directory: URL? { canonicalDirectory ?? bundledDirectory }
+
+    static func load(_ dir: URL) throws -> [(name: String, json: [String: Any])] {
         let files = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "json" }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }

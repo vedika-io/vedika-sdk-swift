@@ -41,8 +41,10 @@ let package = Package(
             // consumed as a standalone repository rather than from inside the
             // monorepo. `monorepoFixtureURL` still prefers the canonical copy
             // when it is reachable, and `testBundledFixtureMatchesCanonical`
-            // fails if the two ever drift.
-            resources: [.process("Resources")]
+            // fails if the two ever drift. `RoomCaptureFixtures` is the same
+            // arrangement for sdks/fixtures/vastu-room-capture: a byte copy that
+            // `testBundledRoomCaptureFixturesMatchCanonical` pins to the source.
+            resources: [.process("Resources"), .copy("RoomCaptureFixtures")]
         ),
     ]
 )

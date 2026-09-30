@@ -26,10 +26,11 @@ final class RoomCaptureModelTests: XCTestCase {
     }
 
     private func withFixtures(_ block: ([(name: String, json: [String: Any])]) throws -> Void) throws {
-        guard let root = RoomCaptureFixtures.monorepoRoot() else {
-            throw XCTSkip("no monorepo checkout above \(FileManager.default.currentDirectoryPath), so sdks/fixtures/vastu-room-capture is not reachable")
+        guard let dir = RoomCaptureFixtures.directory else {
+            XCTFail("room-capture fixtures are neither in a monorepo checkout nor bundled with the test target")
+            return
         }
-        try block(try RoomCaptureFixtures.load(root))
+        try block(try RoomCaptureFixtures.load(dir))
     }
 
     func testTapsReproduceEveryTracedFixturesOutlineAndRoomCornersExactly() throws {

@@ -11,10 +11,31 @@ import XCTest
 final class RoomCaptureGeometryTests: XCTestCase {
 
     private func withFixtures(_ block: ([(name: String, json: [String: Any])]) throws -> Void) throws {
-        guard let root = RoomCaptureFixtures.monorepoRoot() else {
-            throw XCTSkip("no monorepo checkout above \(FileManager.default.currentDirectoryPath), so sdks/fixtures/vastu-room-capture is not reachable")
+        guard let dir = RoomCaptureFixtures.directory else {
+            XCTFail("room-capture fixtures are neither in a monorepo checkout nor bundled with the test target")
+            return
         }
-        try block(try RoomCaptureFixtures.load(root))
+        try block(try RoomCaptureFixtures.load(dir))
+    }
+
+    func testBundledRoomCaptureFixturesMatchCanonical() throws {
+        guard let canonical = RoomCaptureFixtures.canonicalDirectory else {
+            throw XCTSkip("no monorepo checkout reachable; the bundled copy is the only copy here")
+        }
+        guard let bundled = RoomCaptureFixtures.bundledDirectory else {
+            XCTFail("RoomCaptureFixtures resource missing from the test bundle")
+            return
+        }
+        let names = { (dir: URL) throws -> [String] in
+            try FileManager.default.contentsOfDirectory(atPath: dir.path).filter { $0.hasSuffix(".json") }.sorted()
+        }
+        let canonicalNames = try names(canonical)
+        XCTAssertEqual(canonicalNames, try names(bundled), "bundled fixture set drifted from sdks/fixtures/vastu-room-capture")
+        for name in canonicalNames {
+            let a = try Data(contentsOf: canonical.appendingPathComponent(name))
+            let b = try Data(contentsOf: bundled.appendingPathComponent(name))
+            XCTAssertEqual(a, b, "\(name) drifted from sdks/fixtures/vastu-room-capture")
+        }
     }
 
     func testEverySharedFixtureSessionBecomesItsExpectedCaptureExactly() throws {
