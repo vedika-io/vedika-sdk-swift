@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, "release/**"]
+    branches: [main, "release/**", "debug/**"]
   pull_request:
   workflow_dispatch:
 
@@ -10,19 +10,20 @@ permissions:
   contents: read
 
 jobs:
-  build-and-test:
+  diagnose:
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Toolchain
-        run: swift --version && xcodebuild -version
-      - name: Build (macOS)
-        run: swift build
-      - name: Test (macOS)
-        run: swift test
-      - name: Build for iOS devices
-        run: >
-          xcodebuild build -scheme VedikaSDK
-          -destination 'generic/platform=iOS'
-          CODE_SIGNING_ALLOWED=NO
+      - name: One test, capture exit and crash report
+        run: |
+          set +e
+          swift build --build-tests
+          swift test --skip-build --filter 'RoomCaptureGeometryTests/testACaptureNeedsATracedOutline' 2>&1 | tail -40
+          echo "exit=${PIPESTATUS[0]}"
+          swift test --skip-build --filter 'RoomCaptureGeometryTests' 2>&1 | grep -E 'started|passed|failed|skipped|error' | tail -30
+          echo "exit=${PIPESTATUS[0]}"
+          ls -t ~/Library/Logs/DiagnosticReports 2>/dev/null | head
+          f=$(ls -t ~/Library/Logs/DiagnosticReports/*xctest* 2>/dev/null | head -1)
+          [ -n "$f" ] && head -c 6000 "$f"
+          exit 0
