@@ -5,9 +5,7 @@ import XCTest
 
 /// Shared-fixture plumbing for `RoomCaptureGeometryTests` and
 /// `RoomCaptureModelTests`: locates `sdks/fixtures/vastu-room-capture` (its
-/// `.json` files) from within a monorepo checkout (same walk-up-and-skip
-/// pattern as the Kotlin port's `RoomCaptureFixtures.monorepoRoot()` — a
-/// published standalone package does not carry the fixture directory),
+/// `.json` files) from within a monorepo checkout,
 /// falls back to the byte copy bundled with the test target,
 /// parses a fixture's `session` object into `RoomCaptureSession`, and
 /// asserts a built `VastuRoomCapture.dictionary` equals a fixture's
@@ -15,18 +13,21 @@ import XCTest
 enum RoomCaptureFixtures {
     private static let tolerance = 1e-6
 
+    /// The monorepo root, found a fixed number of levels above this source
+    /// file (sdks/swift/Tests/VedikaSDKTests/RoomCapture/), the same way
+    /// `VastuResponseFixtureTests.monorepoFixtureURL` finds its canonical copy.
+    /// It deliberately does not walk up to `/`: on Xcode 16's Foundation the
+    /// parent of `/` is `/..`, which never equals itself, so a walk-up loop
+    /// never terminated there and hung or crashed the test process.
     static func monorepoRoot() -> URL? {
-        var dir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        while true {
-            let candidate = dir.appendingPathComponent("sdks/fixtures/vastu-room-capture")
-            var isDir: ObjCBool = false
-            if FileManager.default.fileExists(atPath: candidate.path, isDirectory: &isDir), isDir.boolValue {
-                return dir
-            }
-            let parent = dir.deletingLastPathComponent()
-            if parent.path == dir.path { return nil }
-            dir = parent
+        var root = URL(fileURLWithPath: #filePath)
+        for _ in 0..<6 { root.deleteLastPathComponent() }
+        let candidate = root.appendingPathComponent("sdks/fixtures/vastu-room-capture")
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: candidate.path, isDirectory: &isDir), isDir.boolValue else {
+            return nil
         }
+        return root
     }
 
     /// The canonical fixture directory when a monorepo checkout is reachable.
