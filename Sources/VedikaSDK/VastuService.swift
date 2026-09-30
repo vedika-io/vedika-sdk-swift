@@ -8,6 +8,7 @@ public enum VastuOperation: String, CaseIterable, Sendable {
     case scansSave = "scans/save"
     case arDeityIcons = "ar/deity-icons"
     case arRoomCapture = "ar/room-capture"
+    case arAttestationChallenge = "ar/attestation/challenge"
     case arYantraMeshes = "ar/yantra-meshes"
     case arZoneTextures = "ar/zone-textures"
     case arAnchorRecommendations = "ar/anchor-recommendations"
@@ -479,14 +480,47 @@ public struct VastuRoomCapture: VastuRequest {
     }
 }
 
+/// Optional native-app device attestation proof; see `VastuOperation.arAttestationChallenge`.
+public struct VastuDeviceAttestation: VastuRequest {
+    public var platform: String
+    public var challenge: String
+    public var keyId: String?
+    public var attestationObject: String?
+    public var assertion: String?
+    public var integrityToken: String?
+    public init(platform: String, challenge: String, keyId: String? = nil, attestationObject: String? = nil, assertion: String? = nil, integrityToken: String? = nil) { self.platform = platform; self.challenge = challenge; self.keyId = keyId; self.attestationObject = attestationObject; self.assertion = assertion; self.integrityToken = integrityToken }
+    public var dictionary: [String: Any] {
+        var result: [String: Any] = [:]
+        if let value = platform as Any? { result["platform"] = encodeVastu(value) }
+        if let value = challenge as Any? { result["challenge"] = encodeVastu(value) }
+        if let value = keyId as Any? { result["keyId"] = encodeVastu(value) }
+        if let value = attestationObject as Any? { result["attestationObject"] = encodeVastu(value) }
+        if let value = assertion as Any? { result["assertion"] = encodeVastu(value) }
+        if let value = integrityToken as Any? { result["integrityToken"] = encodeVastu(value) }
+        return result
+    }
+}
+
+public struct VastuArAttestationChallengeRequest: VastuRequest {
+    public var platform: String
+    public init(platform: String) { self.platform = platform }
+    public var dictionary: [String: Any] {
+        var result: [String: Any] = [:]
+        if let value = platform as Any? { result["platform"] = encodeVastu(value) }
+        return result
+    }
+}
+
 public struct VastuArRoomCaptureRequest: VastuRequest {
     public var capture: VastuRoomCapture
     public var zoneResolution: Int?
-    public init(capture: VastuRoomCapture, zoneResolution: Int? = nil) { self.capture = capture; self.zoneResolution = zoneResolution }
+    public var deviceAttestation: VastuDeviceAttestation?
+    public init(capture: VastuRoomCapture, zoneResolution: Int? = nil, deviceAttestation: VastuDeviceAttestation? = nil) { self.capture = capture; self.zoneResolution = zoneResolution; self.deviceAttestation = deviceAttestation }
     public var dictionary: [String: Any] {
         var result: [String: Any] = [:]
         if let value = capture as Any? { result["capture"] = encodeVastu(value) }
         if let value = zoneResolution as Any? { result["zoneResolution"] = encodeVastu(value) }
+        if let value = deviceAttestation as Any? { result["deviceAttestation"] = encodeVastu(value) }
         return result
     }
 }
@@ -555,7 +589,8 @@ public struct VastuScansSaveRequest: VastuRequest {
     public var title: String
     public var retentionDays: Int
     public var snapshot: VastuScanSnapshot
-    public init(scanId: String, propertyId: String, title: String, retentionDays: Int, snapshot: VastuScanSnapshot) { self.scanId = scanId; self.propertyId = propertyId; self.title = title; self.retentionDays = retentionDays; self.snapshot = snapshot }
+    public var deviceAttestation: VastuDeviceAttestation?
+    public init(scanId: String, propertyId: String, title: String, retentionDays: Int, snapshot: VastuScanSnapshot, deviceAttestation: VastuDeviceAttestation? = nil) { self.scanId = scanId; self.propertyId = propertyId; self.title = title; self.retentionDays = retentionDays; self.snapshot = snapshot; self.deviceAttestation = deviceAttestation }
     public var dictionary: [String: Any] {
         var result: [String: Any] = [:]
         if let value = scanId as Any? { result["scanId"] = encodeVastu(value) }
@@ -563,6 +598,7 @@ public struct VastuScansSaveRequest: VastuRequest {
         if let value = title as Any? { result["title"] = encodeVastu(value) }
         if let value = retentionDays as Any? { result["retentionDays"] = encodeVastu(value) }
         if let value = snapshot as Any? { result["snapshot"] = encodeVastu(value) }
+        if let value = deviceAttestation as Any? { result["deviceAttestation"] = encodeVastu(value) }
         return result
     }
 }
@@ -630,7 +666,8 @@ public struct VastuArScanQualityRequest: VastuRequest {
     public var polygonClosed: Bool?
     public var coveragePercent: Double?
     public var pointCloudDensityBasis: String?
-    public init(pointCloudDensity: Double? = nil, polygonClosure: Bool? = nil, roomsTagged: Bool? = nil, compassConfidence: Double? = nil, gpsConfidence: Double? = nil, scanDurationSec: Double? = nil, scannedAreaM2: Double? = nil, roomCount: Int? = nil, expectedRoomCount: Int? = nil, pointCloudDensityPerM2: Double? = nil, polygonClosed: Bool? = nil, coveragePercent: Double? = nil, pointCloudDensityBasis: String? = nil) { self.pointCloudDensity = pointCloudDensity; self.polygonClosure = polygonClosure; self.roomsTagged = roomsTagged; self.compassConfidence = compassConfidence; self.gpsConfidence = gpsConfidence; self.scanDurationSec = scanDurationSec; self.scannedAreaM2 = scannedAreaM2; self.roomCount = roomCount; self.expectedRoomCount = expectedRoomCount; self.pointCloudDensityPerM2 = pointCloudDensityPerM2; self.polygonClosed = polygonClosed; self.coveragePercent = coveragePercent; self.pointCloudDensityBasis = pointCloudDensityBasis }
+    public var deviceAttestation: VastuDeviceAttestation?
+    public init(pointCloudDensity: Double? = nil, polygonClosure: Bool? = nil, roomsTagged: Bool? = nil, compassConfidence: Double? = nil, gpsConfidence: Double? = nil, scanDurationSec: Double? = nil, scannedAreaM2: Double? = nil, roomCount: Int? = nil, expectedRoomCount: Int? = nil, pointCloudDensityPerM2: Double? = nil, polygonClosed: Bool? = nil, coveragePercent: Double? = nil, pointCloudDensityBasis: String? = nil, deviceAttestation: VastuDeviceAttestation? = nil) { self.pointCloudDensity = pointCloudDensity; self.polygonClosure = polygonClosure; self.roomsTagged = roomsTagged; self.compassConfidence = compassConfidence; self.gpsConfidence = gpsConfidence; self.scanDurationSec = scanDurationSec; self.scannedAreaM2 = scannedAreaM2; self.roomCount = roomCount; self.expectedRoomCount = expectedRoomCount; self.pointCloudDensityPerM2 = pointCloudDensityPerM2; self.polygonClosed = polygonClosed; self.coveragePercent = coveragePercent; self.pointCloudDensityBasis = pointCloudDensityBasis; self.deviceAttestation = deviceAttestation }
     public var dictionary: [String: Any] {
         var result: [String: Any] = [:]
         if let value = pointCloudDensity as Any? { result["pointCloudDensity"] = encodeVastu(value) }
@@ -646,6 +683,7 @@ public struct VastuArScanQualityRequest: VastuRequest {
         if let value = polygonClosed as Any? { result["polygonClosed"] = encodeVastu(value) }
         if let value = coveragePercent as Any? { result["coveragePercent"] = encodeVastu(value) }
         if let value = pointCloudDensityBasis as Any? { result["pointCloudDensityBasis"] = encodeVastu(value) }
+        if let value = deviceAttestation as Any? { result["deviceAttestation"] = encodeVastu(value) }
         return result
     }
 }
@@ -664,7 +702,8 @@ public struct VastuArCountedScanQualityRequest: VastuRequest {
     public var polygonClosed: Bool?
     public var coveragePercent: Double?
     public var pointCloudDensityBasis: String?
-    public init(pointCloudDensity: Double? = nil, polygonClosure: Bool? = nil, roomsTagged: Int? = nil, compassConfidence: Double? = nil, gpsConfidence: Double? = nil, scanDurationSec: Double? = nil, scannedAreaM2: Double? = nil, roomCount: Int? = nil, expectedRoomCount: Int? = nil, pointCloudDensityPerM2: Double? = nil, polygonClosed: Bool? = nil, coveragePercent: Double? = nil, pointCloudDensityBasis: String? = nil) { self.pointCloudDensity = pointCloudDensity; self.polygonClosure = polygonClosure; self.roomsTagged = roomsTagged; self.compassConfidence = compassConfidence; self.gpsConfidence = gpsConfidence; self.scanDurationSec = scanDurationSec; self.scannedAreaM2 = scannedAreaM2; self.roomCount = roomCount; self.expectedRoomCount = expectedRoomCount; self.pointCloudDensityPerM2 = pointCloudDensityPerM2; self.polygonClosed = polygonClosed; self.coveragePercent = coveragePercent; self.pointCloudDensityBasis = pointCloudDensityBasis }
+    public var deviceAttestation: VastuDeviceAttestation?
+    public init(pointCloudDensity: Double? = nil, polygonClosure: Bool? = nil, roomsTagged: Int? = nil, compassConfidence: Double? = nil, gpsConfidence: Double? = nil, scanDurationSec: Double? = nil, scannedAreaM2: Double? = nil, roomCount: Int? = nil, expectedRoomCount: Int? = nil, pointCloudDensityPerM2: Double? = nil, polygonClosed: Bool? = nil, coveragePercent: Double? = nil, pointCloudDensityBasis: String? = nil, deviceAttestation: VastuDeviceAttestation? = nil) { self.pointCloudDensity = pointCloudDensity; self.polygonClosure = polygonClosure; self.roomsTagged = roomsTagged; self.compassConfidence = compassConfidence; self.gpsConfidence = gpsConfidence; self.scanDurationSec = scanDurationSec; self.scannedAreaM2 = scannedAreaM2; self.roomCount = roomCount; self.expectedRoomCount = expectedRoomCount; self.pointCloudDensityPerM2 = pointCloudDensityPerM2; self.polygonClosed = polygonClosed; self.coveragePercent = coveragePercent; self.pointCloudDensityBasis = pointCloudDensityBasis; self.deviceAttestation = deviceAttestation }
     public var dictionary: [String: Any] {
         var result: [String: Any] = [:]
         if let value = pointCloudDensity as Any? { result["pointCloudDensity"] = encodeVastu(value) }
@@ -680,6 +719,7 @@ public struct VastuArCountedScanQualityRequest: VastuRequest {
         if let value = polygonClosed as Any? { result["polygonClosed"] = encodeVastu(value) }
         if let value = coveragePercent as Any? { result["coveragePercent"] = encodeVastu(value) }
         if let value = pointCloudDensityBasis as Any? { result["pointCloudDensityBasis"] = encodeVastu(value) }
+        if let value = deviceAttestation as Any? { result["deviceAttestation"] = encodeVastu(value) }
         return result
     }
 }
@@ -2450,6 +2490,13 @@ public struct VastuArAnchorRecommendationsDataAnchorsItem {
     public var insidePlot: Bool { vastuBool(raw["insidePlot"])! }
 }
 
+public struct VastuArAttestationChallengeDataDeviceAttestation {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var status: String { (raw["status"] as? String)! }
+    public var platform: String { (raw["platform"] as? String)! }
+}
+
 public struct VastuArDeityIconsDataIconsItem {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -2859,6 +2906,14 @@ public struct VastuCatalogReferenceDataRemediesItem {
     public var source: String? { (raw["source"] as? String) }
 }
 
+public struct VastuChatUploadDataBilling {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var chargedCents: Int? { vastuInt(raw["chargedCents"]) }
+    public var balanceAfterCents: Int? { vastuInt(raw["balanceAfterCents"]) }
+    public var currency: String? { (raw["currency"] as? String) }
+}
+
 public struct VastuComplianceIndexDataDrivingDefectsItem {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -3094,6 +3149,25 @@ public struct VastuFloorPlanAuditDataNotAssessedItem {
     public var zone: String { (raw["zone"] as? String)! }
     public var reason: String { (raw["reason"] as? String)! }
     public var graded: Bool { vastuBool(raw["graded"])! }
+}
+
+public struct VastuJobStatusDataCounts {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var succeeded: Int { vastuInt(raw["succeeded"])! }
+    public var failed: Int { vastuInt(raw["failed"])! }
+    public var pending: Int { vastuInt(raw["pending"])! }
+    public var cancelled: Int { vastuInt(raw["cancelled"])! }
+}
+
+public struct VastuJobStatusDataBilling {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var currency: String { (raw["currency"] as? String)! }
+    public var pricePerItem: Double { vastuDouble(raw["pricePerItem"])! }
+    public var maxCharge: Double { vastuDouble(raw["maxCharge"])! }
+    public var charged: Double { vastuDouble(raw["charged"])! }
+    public var basis: String { (raw["basis"] as? String)! }
 }
 
 public struct VastuMandalaReferenceDataZonesItem {
@@ -3429,6 +3503,16 @@ public struct VastuArAnchorRecommendationsData: VastuData {
     public var omissionNote: String { (raw["omissionNote"] as? String)! }
 }
 
+public struct VastuArAttestationChallengeData: VastuData {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var challenge: String? { (raw["challenge"] as? String) }
+    public var expiresAtEpoch: Int? { vastuInt(raw["expiresAtEpoch"]) }
+    public var ttlSeconds: Int? { vastuInt(raw["ttlSeconds"]) }
+    public var singleUse: Bool { vastuBool(raw["singleUse"])! }
+    public var deviceAttestation: VastuArAttestationChallengeDataDeviceAttestation { VastuArAttestationChallengeDataDeviceAttestation(raw: raw["deviceAttestation"] as! [String: Any]) }
+}
+
 public struct VastuArDeityIconsData: VastuData {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -3475,6 +3559,7 @@ public struct VastuArRoomCaptureData: VastuData {
     public var captureVerification: String { (raw["captureVerification"] as? String)! }
     public var attestation: String { (raw["attestation"] as? String)! }
     public var note: String { (raw["note"] as? String)! }
+    public var deviceAttestation: Any { raw["deviceAttestation"]! }
 }
 
 public struct VastuArScanQualityData: VastuData {
@@ -3497,6 +3582,8 @@ public struct VastuArScanQualityData: VastuData {
     public var evidenceSource: String { (raw["evidenceSource"] as? String)! }
     public var sensorAttestation: Bool { vastuBool(raw["sensorAttestation"])! }
     public var limitations: String { (raw["limitations"] as? String)! }
+    public var deviceAttestation: Any? { (raw["deviceAttestation"] is NSNull ? nil : raw["deviceAttestation"]) }
+    public var deviceAttested: Bool? { vastuBool(raw["deviceAttested"]) }
 }
 
 public struct VastuArTrueNorthData: VastuData {
@@ -3657,6 +3744,22 @@ public struct VastuCatalogReferenceData: VastuData {
     public var note: String? { (raw["note"] as? String) }
     public var meta: [String: Any]? { (raw["meta"] as? [String: Any]) }
     public var referenceVersion: String { (raw["referenceVersion"] as? String)! }
+}
+
+public struct VastuChatUploadData: VastuData {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var success: Bool { vastuBool(raw["success"])! }
+    public var uploadId: String { (raw["uploadId"] as? String)! }
+    public var pages: Int { vastuInt(raw["pages"])! }
+    public var charsExtracted: Int { vastuInt(raw["charsExtracted"])! }
+    public var expiresAt: String { (raw["expiresAt"] as? String)! }
+    public var digestSha256: String { (raw["digestSha256"] as? String)! }
+    public var pagesSkipped: Int? { vastuInt(raw["pagesSkipped"]) }
+    public var textTruncated: Bool? { vastuBool(raw["textTruncated"]) }
+    public var replayed: Bool? { vastuBool(raw["replayed"]) }
+    public var billing: VastuChatUploadDataBilling? { (raw["billing"] as? [String: Any]).map { VastuChatUploadDataBilling(raw: $0) } }
+    public var fileSha256: String { (raw["fileSha256"] as? String)! }
 }
 
 public struct VastuComplianceIndexData: VastuData {
@@ -3878,6 +3981,45 @@ public struct VastuFusionChartData: VastuData {
     public var system: String? { (raw["system"] as? String) }
     public var tradition: String? { (raw["tradition"] as? String) }
     public var verified: Bool? { vastuBool(raw["verified"]) }
+}
+
+public struct VastuJobResultsData: VastuData {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var jobId: String { (raw["jobId"] as? String)! }
+    public var jobStatus: String { (raw["jobStatus"] as? String)! }
+    public var results: [Any] { (raw["results"] as? [Any])! }
+    public var nextCursor: String? { (raw["nextCursor"] as? String) }
+}
+
+public struct VastuJobStatusData: VastuData {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var jobId: String { (raw["jobId"] as? String)! }
+    public var status: String { (raw["status"] as? String)! }
+    public var operation: String { (raw["operation"] as? String)! }
+    public var itemCount: Int { vastuInt(raw["itemCount"])! }
+    public var counts: VastuJobStatusDataCounts { VastuJobStatusDataCounts(raw: raw["counts"] as! [String: Any]) }
+    public var billing: VastuJobStatusDataBilling { VastuJobStatusDataBilling(raw: raw["billing"] as! [String: Any]) }
+    public var cancelRequested: Bool { vastuBool(raw["cancelRequested"])! }
+    public var webhookId: String? { (raw["webhookId"] as? String) }
+    public var createdAt: Int { vastuInt(raw["createdAt"])! }
+    public var updatedAt: Int { vastuInt(raw["updatedAt"])! }
+    public var finishedAt: Int? { vastuInt(raw["finishedAt"]) }
+    public var expiresAt: Int { vastuInt(raw["expiresAt"])! }
+    public var resultsUrl: String { (raw["resultsUrl"] as? String)! }
+}
+
+public struct VastuJobSubmitData: VastuData {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var jobId: String { (raw["jobId"] as? String)! }
+    public var status: String { (raw["status"] as? String)! }
+    public var itemCount: Int { vastuInt(raw["itemCount"])! }
+    public var maxCharge: Double { vastuDouble(raw["maxCharge"])! }
+    public var replayed: Bool { vastuBool(raw["replayed"])! }
+    public var preview: [Any]? { (raw["preview"] as? [Any]) }
+    public var previewNote: String? { (raw["previewNote"] as? String) }
 }
 
 public struct VastuLevelAnalysisData: VastuData {
@@ -4318,6 +4460,7 @@ public struct VastuScansSaveData: VastuData {
     public var retentionNote: String? { (raw["retentionNote"] as? String) }
     public var persistence: String { (raw["persistence"] as? String)! }
     public var previewNote: String? { (raw["previewNote"] as? String) }
+    public var deviceAttestation: Any? { (raw["deviceAttestation"] is NSNull ? nil : raw["deviceAttestation"]) }
 }
 
 public struct VastuScansTimelapseData: VastuData {
@@ -4490,6 +4633,7 @@ public enum VastuContracts {
     public static let arDeityIcons = VastuContract<VastuArDeityIconsRequest, VastuArDeityIconsData>(operation: .arDeityIcons, decode: VastuArDeityIconsData.init)
 
     public static let arRoomCapture = VastuContract<VastuArRoomCaptureRequest, VastuArRoomCaptureData>(operation: .arRoomCapture, decode: VastuArRoomCaptureData.init)
+    public static let arAttestationChallenge = VastuContract<VastuArAttestationChallengeRequest, VastuArAttestationChallengeData>(operation: .arAttestationChallenge, decode: VastuArAttestationChallengeData.init)
 
     public static let arYantraMeshes = VastuContract<VastuArYantraMeshesRequest, VastuArYantraMeshesData>(operation: .arYantraMeshes, decode: VastuArYantraMeshesData.init)
 
@@ -4670,7 +4814,7 @@ public enum VastuContracts {
 
 /// Vastu Shastra: plot geometry, mandala projection, entrance/room/
 /// placement rules, compliance audits, scoring, and floor-plan generation
-/// (93 logical backend operations across the full domain — this first deliverable
+/// (94 logical backend operations across the full domain — this first deliverable
 /// ships the 12 client methods that reach all of them, including the two
 /// escape hatches, `vastu` and `vastuReference`, for any op/table that
 /// doesn't have its own named method). Mirrors
@@ -4689,7 +4833,7 @@ public final class VastuService {
         self.client = client
     }
 
-    /// Exact request and result types for one of the 93 mounted operations.
+    /// Exact request and result types for one of the 94 mounted operations.
     public func vastuOperation<Request: VastuRequest, Data: VastuData>(
         _ contract: VastuContract<Request, Data>,
         request: Request,

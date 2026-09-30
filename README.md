@@ -10,7 +10,7 @@ resolve a package from a subdirectory of a larger repository.
 ## Install
 
 ```swift
-.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.0.3")
+.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.1.0")
 ```
 
 Then add `VedikaSDK` to your target's dependencies.
@@ -26,6 +26,18 @@ let client = VedikaClient(config: VedikaConfig(apiKey: "vk_live_..."))
 let audit = try await client.vastu.auditSingleRoom(roomType: "kitchen", zone: "NE")
 print(audit.score ?? 0)
 ```
+
+## iPhone room scanner (1.1.0)
+
+`VedikaSDK` now includes a native room scanner for iOS. It captures a room with
+RoomPlan on LiDAR iPhones and falls back to ARKit plane raycasts (corners tapped by
+hand) elsewhere, then uploads a `vedika.roomCapture/1` through the existing Vastu
+client. `RoomCaptureAvailability.currentPath()` tells you which path a device can run.
+The geometry core is plain Swift and is tested on macOS. The RoomPlan and ARKit parts
+are iOS-only and need a physical device with LiDAR for the RoomPlan path.
+
+Add `NSCameraUsageDescription` (and `NSLocationWhenInUseUsageDescription` for the true
+heading sample) to your app's Info.plist.
 
 ## Keys
 

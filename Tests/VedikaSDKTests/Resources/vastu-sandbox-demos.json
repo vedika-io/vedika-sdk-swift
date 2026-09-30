@@ -3,8 +3,8 @@
     "schemaVersion": 2,
     "source": "frozen local Rust vedika-v2 sandbox_router handlers",
     "generatedBy": "scripts/catalog/harvest-vastu-sandbox-demos.mjs",
-    "endpointCount": 93,
-    "demoCount": 93,
+    "endpointCount": 94,
+    "demoCount": 94,
     "unavailableCount": 0,
     "unavailable": [],
     "language": "en",
@@ -476,8 +476,8 @@
         "query": {}
       },
       "requestFingerprint": "ea3a2133a60099d14a9fbad5781332e89872b80f465a7d4691bfc26bd31e5666",
-      "responseFingerprint": "499b1f68787b2060bb6603df5d083c43db05bf8a5d87e30aaed9a823d96c04fe",
-      "fixtureFingerprint": "3abbe32ed1ce76789be7dcd409699e31a3813243c3f0802a919df301ed17be6e"
+      "responseFingerprint": "678d1da16651e4e7e38663bafb34a0ea24554bb0197baabc9456d2b95e2ab441",
+      "fixtureFingerprint": "d32f1a219ec5f2fd74499ba2d8c67f8dc5a620bdeec6a5d9077cb4eaff8aad3b"
     },
     "vastu__plot_ratio": {
       "request": {
@@ -1907,8 +1907,22 @@
         "query": {}
       },
       "requestFingerprint": "3e88cad3461c376a1acc12203183fef79c9aecfb0027061de341c1197cbed839",
-      "responseFingerprint": "c3af025d5174292f0241e36c89311b09b60fc16f4543a039c70a6dcb10870795",
-      "fixtureFingerprint": "9d43639a89397152a778823f206f4e14dddacbaf340881faf99de8eca1127712"
+      "responseFingerprint": "d5a5fd72e65234796ea1b50265c0edf6790b3385baf37d1f64173670ae8cb2f9",
+      "fixtureFingerprint": "6c49c5a88b2e7e8f5441ab90378fd57487f2c0d2245efa3a4f4ebec36d4e963d"
+    },
+    "vastu__ar_attestation_challenge": {
+      "request": {
+        "body": {
+          "platform": "ios"
+        },
+        "language": "en",
+        "method": "POST",
+        "path": "/sandbox/vastu/ar/attestation/challenge",
+        "query": {}
+      },
+      "requestFingerprint": "98ff5f84e3937aacffe08f79d3eb7da7b1a1696d992256e41018962650f55309",
+      "responseFingerprint": "066127456c59d85ce00d01ff9c340b4e22c167a394772e432291fd2e90db0dfb",
+      "fixtureFingerprint": "496c162e69c130b8c33faa0749dbae90769169770f8237505ef633ef19e281a9"
     },
     "vastu__scans_save": {
       "request": {
@@ -8506,6 +8520,10 @@
       },
       "data": {
         "acceptForAudit": true,
+        "deviceAttestation": {
+          "platform": null,
+          "status": "not_configured"
+        },
         "dimensions": {
           "compassConfidence": {
             "reason": "Caller-reported: Compass stable — direction trustworthy",
@@ -34011,6 +34029,10 @@
             "scannedAreaM2": 108
           }
         },
+        "deviceAttestation": {
+          "platform": null,
+          "status": "not_configured"
+        },
         "method": "room-capture",
         "note": "Geometry and labels are as the device reported them. Nothing here certifies a physical survey; classical citations come only from the nested audit, plan analysis and anchor blocks.",
         "planAnalysis": {
@@ -34695,6 +34717,45 @@
         "note": "This answer was computed from your supplied input within the stated sandbox limits. Missing fields are not filled from the demo, and explicit empty values reach the endpoint validator. No account storage or billing occurs.",
         "receivedFields": [
           "capture"
+        ],
+        "sandboxLimits": {
+          "maxDimension": 500,
+          "maxPolygonVertices": 16,
+          "maxRooms": 8
+        },
+        "version": "2.1.0"
+      },
+      "success": true
+    },
+    "vastu__ar_attestation_challenge": {
+      "billing": {
+        "balanceAfter": 100,
+        "balanceBefore": 100,
+        "category": "astrology",
+        "charged": 0,
+        "currency": "USD",
+        "endpoint": "/sandbox/vastu/ar/attestation/challenge"
+      },
+      "data": {
+        "challenge": null,
+        "deviceAttestation": {
+          "platform": "ios",
+          "status": "not_configured"
+        },
+        "expiresAtEpoch": null,
+        "singleUse": true,
+        "ttlSeconds": null
+      },
+      "meta": {
+        "contentMode": "computed_from_request",
+        "emptyFieldsDiscarded": [],
+        "engine": "vedika-intelligence",
+        "inputUsage": "accepted_within_sandbox_limits",
+        "limitsApplied": [],
+        "mode": "sandbox",
+        "note": "This answer was computed from your supplied input within the stated sandbox limits. Missing fields are not filled from the demo, and explicit empty values reach the endpoint validator. No account storage or billing occurs.",
+        "receivedFields": [
+          "platform"
         ],
         "sandboxLimits": {
           "maxDimension": 500,

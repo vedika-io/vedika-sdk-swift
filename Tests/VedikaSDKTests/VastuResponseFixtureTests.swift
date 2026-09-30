@@ -128,6 +128,7 @@ final class VastuResponseFixtureTests: XCTestCase {
             "vastu__ar_yantra_meshes": "VastuArYantraMeshesData",
             "vastu__ar_deity_icons": "VastuArDeityIconsData",
             "vastu__ar_room_capture": "VastuArRoomCaptureData",
+            "vastu__ar_attestation_challenge": "VastuArAttestationChallengeData",
             "vastu__scans_save": "VastuScansSaveData",
             "vastu__scans_retrieve": "VastuScansRetrieveData",
             "vastu__scans_list": "VastuScansListData",
@@ -136,14 +137,15 @@ final class VastuResponseFixtureTests: XCTestCase {
             "vastu__fusion_chart": "VastuFusionChartData",
             "vastu__compare_before_after_remedy": "VastuRemedyComparisonData",
         ]
-        XCTAssertEqual(demos.count, 93)
-        XCTAssertEqual(Set(types.values).count, 57)
+        XCTAssertEqual(demos.count, 94)
+        XCTAssertEqual(Set(types.values).count, 58)
         for (key, response) in demos {
             let raw = response["data"] as! [String: Any]
             let actual: [String: Any]
             switch types[key]! {
             case "VastuArAnchorRecommendationsData": actual = readVastuArAnchorRecommendationsData(VastuArAnchorRecommendationsData(raw: raw))
             case "VastuArRoomCaptureData": actual = readVastuArRoomCaptureData(VastuArRoomCaptureData(raw: raw))
+            case "VastuArAttestationChallengeData": actual = readVastuArAttestationChallengeData(VastuArAttestationChallengeData(raw: raw))
             case "VastuArDeityIconsData": actual = readVastuArDeityIconsData(VastuArDeityIconsData(raw: raw))
             case "VastuArHeatmapRasterData": actual = readVastuArHeatmapRasterData(VastuArHeatmapRasterData(raw: raw))
             case "VastuArScanQualityData": actual = readVastuArScanQualityData(VastuArScanQualityData(raw: raw))
@@ -889,7 +891,18 @@ private func readVastuArRoomCaptureData(_ value: VastuArRoomCaptureData) -> [Str
         "verified": (value.verified as Any?) ?? NSNull(),
         "captureVerification": (value.captureVerification as Any?) ?? NSNull(),
         "attestation": (value.attestation as Any?) ?? NSNull(),
+        "deviceAttestation": (value.deviceAttestation as Any?) ?? NSNull(),
         "note": (value.note as Any?) ?? NSNull(),
+    ]
+}
+
+private func readVastuArAttestationChallengeData(_ value: VastuArAttestationChallengeData) -> [String: Any] {
+    [
+        "challenge": (value.challenge as Any?) ?? NSNull(),
+        "expiresAtEpoch": (value.expiresAtEpoch as Any?) ?? NSNull(),
+        "ttlSeconds": (value.ttlSeconds as Any?) ?? NSNull(),
+        "singleUse": (value.singleUse as Any?) ?? NSNull(),
+        "deviceAttestation": (value.deviceAttestation as Any?) ?? NSNull(),
     ]
 }
 
