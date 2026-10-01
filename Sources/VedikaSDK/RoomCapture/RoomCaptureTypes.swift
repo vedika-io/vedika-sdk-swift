@@ -77,11 +77,18 @@ public struct RoomCaptureOutlineInput: Equatable, Sendable {
     public var source: String
     public var worldCorners: [Vec3]
     public var closingTap: Vec3?
+    /// The widest unmeasured seam in the traced loop, for captures that are
+    /// not tapped corner by corner (RoomPlan walls). `nil` for tapped
+    /// outlines, where the closure gap is the only seam. When set, the
+    /// reported closure gap is never smaller than this, so a hole in the
+    /// middle of the loop cannot read as a closed outline.
+    public var maxSeamGapM: Double?
 
-    public init(source: String, worldCorners: [Vec3], closingTap: Vec3?) {
+    public init(source: String, worldCorners: [Vec3], closingTap: Vec3?, maxSeamGapM: Double? = nil) {
         self.source = source
         self.worldCorners = worldCorners
         self.closingTap = closingTap
+        self.maxSeamGapM = maxSeamGapM
     }
 }
 

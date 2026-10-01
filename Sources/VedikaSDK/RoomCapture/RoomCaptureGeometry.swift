@@ -268,7 +268,7 @@ public enum RoomCaptureGeometry {
         let b = toPlan(loopB)
         let dx = a.0 - b.0
         let dy = a.1 - b.1
-        let gap = roundHalfUp((dx * dx + dy * dy).squareRoot(), 2)
+        let gap = roundHalfUp(max((dx * dx + dy * dy).squareRoot(), session.outline.maxSeamGapM ?? 0), 2)
 
         var rooms: [VastuRoomCaptureRoomsItem] = []
         for (index, room) in session.rooms.enumerated() {
