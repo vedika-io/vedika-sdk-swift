@@ -16,7 +16,7 @@ import Foundation
 /// policy, `get`/`post` primitives, response handling) does not need to
 /// change to add one.
 public final class VedikaClient {
-    private static let sdkVersion = "vedika-swift/1.1.1"
+    private static let sdkVersion = "vedika-swift/1.2.0"
 
     /// Two extra attempts for network failures and 5xx responses. Either
     /// can follow a completed charge, so billed requests must retain their
