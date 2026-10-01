@@ -23,6 +23,12 @@ public final class VedikaClient {
     /// idempotency key. A rejected 4xx request is never retried.
     private static let maxRetries = 2
 
+    /// Submits that charge per item and so must carry a caller-retained key: a batch and an async job.
+    private static let retainedKeyPaths: Set<String> = [
+        "/v2/vastu/assessments/batch", "/v2/astrology/vastu/assessments/batch",
+        "/v2/vastu/jobs", "/v2/astrology/vastu/jobs",
+    ]
+
     private static let billedVastuGetPaths = Set(
         ["/v2/vastu/", "/v2/astrology/vastu/"].flatMap { prefix in
             [
@@ -167,7 +173,7 @@ public final class VedikaClient {
     ///   can't see.
     @discardableResult
     func post(_ path: String, body: [String: Any], idempotencyKey: String? = nil) async throws -> [String: Any] {
-        if ["/v2/vastu/assessments/batch", "/v2/astrology/vastu/assessments/batch"].contains(String(path.split(separator: "?", maxSplits: 1).first ?? "")) {
+        if Self.retainedKeyPaths.contains(String(path.split(separator: "?", maxSplits: 1).first ?? "")) {
             guard let idempotencyKey, !idempotencyKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 throw VedikaApiError("A nonblank caller-retained Idempotency-Key is required")
             }
@@ -230,7 +236,7 @@ public final class VedikaClient {
         }
 
         switch response.statusCode {
-        case 200:
+        case 200..<300:  // job submit answers 202
             return body
         case 401:
             throw VedikaAuthError(body["error"] as? String ?? "Invalid API key", body: body)

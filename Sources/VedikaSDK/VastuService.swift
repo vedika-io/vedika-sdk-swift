@@ -95,6 +95,10 @@ public enum VastuOperation: String, CaseIterable, Sendable {
     case arTrueNorthCalibrate = "ar/true-north-calibrate"
     case assessments = "assessments"
     case assessmentsBatch = "assessments/batch"
+    case jobs = "jobs"
+    case jobsId = "jobs/{id}"
+    case jobsIdResults = "jobs/{id}/results"
+    case jobsIdCancel = "jobs/{id}/cancel"
 }
 
 public struct VastuPoint: Sendable {
@@ -4814,7 +4818,7 @@ public enum VastuContracts {
 
 /// Vastu Shastra: plot geometry, mandala projection, entrance/room/
 /// placement rules, compliance audits, scoring, and floor-plan generation
-/// (94 logical backend operations across the full domain — this first deliverable
+/// (98 logical backend operations across the full domain — this first deliverable
 /// ships the 12 client methods that reach all of them, including the two
 /// escape hatches, `vastu` and `vastuReference`, for any op/table that
 /// doesn't have its own named method). Mirrors
@@ -4838,7 +4842,7 @@ public final class VastuService {
         self.client = client
     }
 
-    /// Exact request and result types for one of the 94 mounted operations.
+    /// Exact request and result types for one of the 98 mounted operations.
     public func vastuOperation<Request: VastuRequest, Data: VastuData>(
         _ contract: VastuContract<Request, Data>,
         request: Request,
@@ -4867,6 +4871,12 @@ public final class VastuService {
     @discardableResult
     public func vastu(_ op: String, params: [String: Any] = [:], idempotencyKey: String? = nil) async throws -> [String: Any] {
         let path = Self.stripLeadingSlash(op)
+        if path.hasPrefix("jobs/") {
+            guard let job = vastuJobPath(path) else {
+                throw VedikaApiError("Job paths are jobs/{jobId}, jobs/{jobId}/results and jobs/{jobId}/cancel")
+            }
+            _ = try requireVastuJobId(job.id)
+        }
         if Self.isGetOp(path) {
             return try await client.get(
                 "\(Self.base)/\(path)", queryParams: Self.stringifyParams(params), idempotencyKey: idempotencyKey
@@ -4906,6 +4916,10 @@ public final class VastuService {
         request: VastuOperationRequest = VastuOperationRequest(),
         idempotencyKey: String? = nil
     ) async throws -> VastuOperationResult {
+        if operation.rawValue.contains("{id}") {
+            throw VedikaApiError(
+                "\(operation.rawValue) carries a job id; use vastuJobStatus, vastuJobResults or vastuJobCancel")
+        }
         let params = request.dictionary
         let raw: [String: Any]
         if Self.isGetOp(operation.rawValue) {
@@ -4996,6 +5010,72 @@ public final class VastuService {
         )
     }
 
+    /// Queue 1 to 1,000 assessments and get a jobId back at once (HTTP 202).
+    ///
+    /// `idempotencyKey` is mandatory and must be retained by the caller. Save
+    /// it with this exact request: after a lost response or a restart, submit
+    /// the same body with the same key and the original job comes back
+    /// (`data.replayed` is true) instead of a second paid job. Each item is
+    /// charged only after it succeeds.
+    public func vastuJobSubmit(_ request: VastuJobsRequest, idempotencyKey: String) async throws -> VastuJobSubmitResponse {
+        let raw = try await client.post("\(Self.base)/jobs", body: request.dictionary, idempotencyKey: idempotencyKey)
+        return VastuJobSubmitResponse(
+            success: raw["success"] as? Bool ?? false,
+            data: VastuJobSubmitData(raw: raw["data"] as? [String: Any] ?? [:]), raw: raw
+        )
+    }
+
+    /// Status, per-state counts and billing of a job. Free.
+    public func vastuJobStatus(_ jobId: String) async throws -> VastuJobStatusResponse {
+        let id = try requireVastuJobId(jobId)
+        let raw = try await client.get("\(Self.base)/jobs/\(id)")
+        return VastuJobStatusResponse(
+            success: raw["success"] as? Bool ?? false,
+            data: VastuJobStatusData(raw: raw["data"] as? [String: Any] ?? [:]), raw: raw
+        )
+    }
+
+    /// One page (up to 50) of finished item results, in item order. Free.
+    /// Cursor pagination only: pass the previous page's `data.nextCursor`; it
+    /// is nil on the last page. See `vastuJobAllResults` to collect them all.
+    public func vastuJobResults(_ jobId: String, cursor: String? = nil) async throws -> VastuJobResultsResponse {
+        if let cursor, cursor.isEmpty || cursor.utf8.count > 32 {
+            throw VedikaApiError("cursor must be the nextCursor of the previous page (1 to 32 characters)")
+        }
+        let id = try requireVastuJobId(jobId)
+        let raw = try await client.get(
+            "\(Self.base)/jobs/\(id)/results",
+            queryParams: cursor.map { ["cursor": $0] } ?? [:]
+        )
+        return VastuJobResultsResponse(
+            success: raw["success"] as? Bool ?? false,
+            data: VastuJobResultsData(raw: raw["data"] as? [String: Any] ?? [:]), raw: raw
+        )
+    }
+
+    /// Every finished item of a job, following `nextCursor` until it is nil.
+    public func vastuJobAllResults(_ jobId: String) async throws -> [VastuJobResultItem] {
+        var items: [VastuJobResultItem] = []
+        var cursor: String?
+        while true {
+            let page = try await vastuJobResults(jobId, cursor: cursor).data
+            items.append(contentsOf: page.items)
+            guard let next = page.nextCursor else { return items }
+            if next == cursor { throw VedikaApiError("The server returned the same results cursor twice") }
+            cursor = next
+        }
+    }
+
+    /// Stop a queued or running job. Items already charged stay charged; the rest are not run. Free.
+    public func vastuJobCancel(_ jobId: String) async throws -> VastuJobStatusResponse {
+        let id = try requireVastuJobId(jobId)
+        let raw = try await client.post("\(Self.base)/jobs/\(id)/cancel", body: [:])
+        return VastuJobStatusResponse(
+            success: raw["success"] as? Bool ?? false,
+            data: VastuJobStatusData(raw: raw["data"] as? [String: Any] ?? [:]), raw: raw
+        )
+    }
+
     /// Single-room placement, e.g. `vastuRoom("kitchen", params: ["zone": "southeast"])`.
     /// `roomType`: kitchen, bedroom, pooja, toilet, staircase, study, living,
     /// dining, store, water-storage.
@@ -5055,7 +5135,9 @@ public final class VastuService {
     }
 
     private static func isGetOp(_ path: String) -> Bool {
-        path.hasPrefix("reference/") || path == "direction/declination"
+        if path.hasPrefix("reference/") || path == "direction/declination" { return true }
+        guard let job = vastuJobPath(path) else { return false }
+        return job.suffix != "cancel"
     }
 
     /// Query params are stringified for GET; `nil`/`NSNull` values are

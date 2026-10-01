@@ -8,6 +8,8 @@
 //
 // Vedika-Task: R-004
 
+import Foundation
+
 /// A point in AR world space, metres, Y-up (matches WebXR/ARCore/ARKit convention).
 public struct Vec3: Equatable, Sendable {
     public var x: Double
@@ -77,11 +79,18 @@ public struct RoomCaptureOutlineInput: Equatable, Sendable {
     public var source: String
     public var worldCorners: [Vec3]
     public var closingTap: Vec3?
+    /// The widest unmeasured seam in the traced loop, for captures that are
+    /// not tapped corner by corner (RoomPlan walls). `nil` for tapped
+    /// outlines, where the closure gap is the only seam. When set, the
+    /// reported closure gap is never smaller than this, so a hole in the
+    /// middle of the loop cannot read as a closed outline.
+    public var maxSeamGapM: Double?
 
-    public init(source: String, worldCorners: [Vec3], closingTap: Vec3?) {
+    public init(source: String, worldCorners: [Vec3], closingTap: Vec3?, maxSeamGapM: Double? = nil) {
         self.source = source
         self.worldCorners = worldCorners
         self.closingTap = closingTap
+        self.maxSeamGapM = maxSeamGapM
     }
 }
 
@@ -151,11 +160,15 @@ public struct RoomCaptureSession: Equatable, Sendable {
     public var outline: RoomCaptureOutlineInput
     public var rooms: [RoomCaptureRoomInput]
     public var quality: RoomCaptureQualityInput
+    /// True once the person scanning has named the room and confirmed how the
+    /// outline relates to it (`confirmed(label:outline:)`). A RoomPlan capture
+    /// starts unconfirmed: RoomPlan knows walls, not what the room is for.
+    public var outlineConfirmed: Bool
 
     public init(
         captureId: String, capturedAtEpoch: Int, device: RoomCaptureDeviceInput, headingFrame: String,
         north: RoomCaptureNorthInput, headingSamples: [RoomCaptureHeadingSample], outline: RoomCaptureOutlineInput,
-        rooms: [RoomCaptureRoomInput], quality: RoomCaptureQualityInput
+        rooms: [RoomCaptureRoomInput], quality: RoomCaptureQualityInput, outlineConfirmed: Bool = false
     ) {
         self.captureId = captureId
         self.capturedAtEpoch = capturedAtEpoch
@@ -166,6 +179,98 @@ public struct RoomCaptureSession: Equatable, Sendable {
         self.outline = outline
         self.rooms = rooms
         self.quality = quality
+        self.outlineConfirmed = outlineConfirmed
+    }
+}
+
+/// What the outline of a single-room RoomPlan capture means. The audit scope
+/// is always explicit: one room, or a property boundary the caller traced.
+public enum RoomCaptureOutlineConfirmation: Equatable, Sendable {
+    /// The outline is this one room's own perimeter, as scanned. The audit
+    /// covers this room only and says nothing about its place in a larger home.
+    case singleRoomPerimeter
+    /// The outline is the property boundary the caller traced (at least three
+    /// corners, same world frame); the scanned room sits inside it.
+    case propertyBoundary(worldCorners: [Vec3], closingTap: Vec3?)
+}
+
+extension RoomCaptureSession {
+    /// The one `RoomCaptureSession` shape the RoomPlan controller produces for a
+    /// finished scan: a single room with no label (`labelSource` "none") whose
+    /// outline is the traced wall perimeter, not yet confirmed. The measured
+    /// seams (`trace.closingTap`, `maxSeamGapM`) and RoomPlan's real quality
+    /// (`RoomPlanCaptureQuality.measured()`) are kept as RoomPlan reported them.
+    /// The server refuses a capture with no labelled room, so this is a draft
+    /// until `confirmed(label:outline:)` names the room.
+    public static func roomPlanSingleRoom(
+        captureId: String, capturedAtEpoch: Int, headingSamples: [RoomCaptureHeadingSample],
+        declinationDeg: Double?, declinationProvenance: String, trace: RoomPlanWallTrace,
+        openings: [RoomCaptureOpeningInput]
+    ) -> RoomCaptureSession {
+        RoomCaptureSession(
+            captureId: captureId,
+            capturedAtEpoch: capturedAtEpoch,
+            device: RoomCaptureDeviceInput(platform: "ios", method: "roomplan", depth: "lidar"),
+            headingFrame: declinationDeg != nil ? "true" : "magnetic",
+            north: RoomCaptureNorthInput(
+                referenceFrame: "true", headingSource: "roomplan-coaching+core-location",
+                declinationDeg: declinationDeg, declinationProvenance: declinationProvenance
+            ),
+            headingSamples: headingSamples,
+            outline: trace.outline,
+            rooms: [
+                RoomCaptureRoomInput(
+                    id: "room-1", label: nil, labelSource: "none", floorIndex: 0, heightM: nil,
+                    worldCorners: trace.corners, closingTap: trace.closingTap, openings: openings
+                ),
+            ],
+            quality: RoomPlanCaptureQuality.measured()
+        )
+    }
+
+    /// True when at least one room carries a label the person gave (the
+    /// server's own rule: an untagged capture has nothing to audit) and the
+    /// outline has been confirmed.
+    public var isReadyForUpload: Bool {
+        outlineConfirmed && rooms.contains { $0.label != nil && $0.labelSource != "none" }
+    }
+
+    /// The label and outline confirmation step for a single-room capture.
+    ///
+    /// `label` is the room's use as the person says it: kitchen, bedroom,
+    /// master bedroom, pooja, toilet, living, dining, storage, treasury,
+    /// study, staircase, entrance, guest or children (the API refuses any
+    /// other label and names the ones it did not recognise). It is sent with
+    /// `labelSource` "user". `outline` states the scope: the room's own
+    /// perimeter, or a property boundary the caller traced. Returns a copy;
+    /// throws `RoomCaptureError` for a blank or over-long label, a session with
+    /// more than one room, an outline that is not this room's perimeter, or a
+    /// boundary of fewer than three corners.
+    public func confirmed(label: String, outline confirmation: RoomCaptureOutlineConfirmation) throws -> RoomCaptureSession {
+        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.utf8.count <= 64 else {
+            throw RoomCaptureError("label must be nonblank and at most 64 characters")
+        }
+        guard rooms.count == 1 else {
+            throw RoomCaptureError("confirmed(label:outline:) tags the one scanned room; this session holds \(rooms.count) rooms")
+        }
+        var copy = self
+        switch confirmation {
+        case .singleRoomPerimeter:
+            guard outline.worldCorners == rooms[0].worldCorners else {
+                throw RoomCaptureError(
+                    "the outline is not this room's perimeter; confirm .propertyBoundary with the traced boundary instead")
+            }
+        case .propertyBoundary(let corners, let closingTap):
+            guard corners.count >= 3 else {
+                throw RoomCaptureError("a property boundary needs at least 3 corners")
+            }
+            copy.outline = RoomCaptureOutlineInput(source: "traced", worldCorners: corners, closingTap: closingTap)
+        }
+        copy.rooms[0].label = trimmed
+        copy.rooms[0].labelSource = "user"
+        copy.outlineConfirmed = true
+        return copy
     }
 }
 

@@ -33,7 +33,13 @@ public struct RoomCaptureUploader {
         _ capture: VastuRoomCapture, zoneResolution: Int? = nil, deviceAttestation: VastuDeviceAttestation? = nil,
         idempotencyKey: String? = nil
     ) async throws -> VastuTypedResponse<VastuArRoomCaptureData> {
-        try await service.vastuOperation(
+        // The server refuses a capture with no labelled room before any charge.
+        // Say so here, with the way out, instead of after a round trip.
+        guard capture.quality.roomsTagged > 0 else {
+            throw RoomCaptureError(
+                "Tag at least one room before uploading: name it with RoomCaptureSession.confirmed(label:outline:)")
+        }
+        return try await service.vastuOperation(
             VastuContracts.arRoomCapture,
             request: VastuArRoomCaptureRequest(capture: capture, zoneResolution: zoneResolution, deviceAttestation: deviceAttestation),
             idempotencyKey: idempotencyKey

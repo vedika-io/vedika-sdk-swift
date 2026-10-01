@@ -40,6 +40,13 @@ public protocol RoomPlanCaptureControllerDelegate: AnyObject {
     /// The session finished (successfully or not). `result` is `nil` when
     /// the room could not be built (see `error` on `RoomBuilder`'s own
     /// throw); the controller never fabricates a placeholder capture.
+    ///
+    /// RoomPlan knows walls, not what a room is for, so `result` has no label
+    /// until the person scanning gives one, and the server refuses a capture
+    /// with no labelled room. Check `result.isReadyForUpload`. If it is false,
+    /// ask which room it was and call `result.confirmed(label:outline:)`, or
+    /// call `confirmRoom(label:outline:)` on the controller before the scan
+    /// ends so the result arrives confirmed.
     func roomPlanCapture(_ controller: RoomPlanCaptureController, didFinish result: RoomCaptureSession?, error: Error?)
 }
 
@@ -70,6 +77,7 @@ public final class RoomPlanCaptureController: NSObject {
     private var headingSamples: [RoomCaptureHeadingSample] = []
     private var declinationDeg: Double?
     private var declinationProvenance = "unset"
+    private var pendingConfirmation: (label: String, outline: RoomCaptureOutlineConfirmation)?
 
     public init(captureId: String, frame: CGRect = .zero) {
         self.captureId = captureId
@@ -112,6 +120,19 @@ public final class RoomPlanCaptureController: NSObject {
         self.declinationProvenance = provenance
     }
 
+    /// The caller-supplied label and outline scope for the room being scanned,
+    /// for example the room the person said they were standing in. The finished
+    /// capture is then delivered already confirmed (`isReadyForUpload`). Throws
+    /// `RoomCaptureError` for a blank or over-long label. Without it the result
+    /// is an unlabelled draft; see the delegate's note.
+    public func confirmRoom(label: String, outline: RoomCaptureOutlineConfirmation = .singleRoomPerimeter) throws {
+        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.utf8.count <= 64 else {
+            throw RoomCaptureError("label must be nonblank and at most 64 characters")
+        }
+        pendingConfirmation = (trimmed, outline)
+    }
+
     /// `RoomCaptureViewDelegate.captureView(didPresent:error:)` (below)
     /// already hands over the fully-built `CapturedRoom` — `RoomCaptureView`
     /// runs its own internal `RoomBuilder` before presenting it, so this
@@ -120,10 +141,13 @@ public final class RoomPlanCaptureController: NSObject {
     /// entirely) would need to build from raw `CapturedRoomData`.
     private func finish(room: CapturedRoom) {
         do {
-            let session = try Self.toCaptureSession(
+            var session = try Self.toCaptureSession(
                 room, captureId: captureId, startedAt: startedAt, headingSamples: headingSamples,
                 declinationDeg: declinationDeg, declinationProvenance: declinationProvenance
             )
+            if let pendingConfirmation {
+                session = try session.confirmed(label: pendingConfirmation.label, outline: pendingConfirmation.outline)
+            }
             delegate?.roomPlanCapture(self, didFinish: session, error: nil)
         } catch {
             delegate?.roomPlanCapture(self, didFinish: nil, error: error)
@@ -137,7 +161,7 @@ public final class RoomPlanCaptureController: NSObject {
         _ room: CapturedRoom, captureId: String, startedAt: Date, headingSamples: [RoomCaptureHeadingSample],
         declinationDeg: Double?, declinationProvenance: String
     ) throws -> RoomCaptureSession {
-        let outline = try chainWallOutline(room.walls)
+        let trace = try chainWallOutline(room.walls)
         let openings: [RoomCaptureOpeningInput] = (room.doors.map { ("door", $0) } + room.windows.map { ("window", $0) } + room.openings.map { ("opening", $0) })
             .map { kind, surface in
                 RoomCaptureOpeningInput(
@@ -145,25 +169,10 @@ public final class RoomPlanCaptureController: NSObject {
                     heightM: Double(surface.dimensions.y), confidence: confidenceString(surface.confidence)
                 )
             }
-        let headingFrame = declinationDeg != nil ? "true" : "magnetic"
-        return RoomCaptureSession(
-            captureId: captureId,
-            capturedAtEpoch: Int(startedAt.timeIntervalSince1970),
-            device: RoomCaptureDeviceInput(platform: "ios", method: "roomplan", depth: "lidar"),
-            headingFrame: headingFrame,
-            north: RoomCaptureNorthInput(
-                referenceFrame: "true", headingSource: "roomplan-coaching+core-location",
-                declinationDeg: declinationDeg, declinationProvenance: declinationProvenance
-            ),
-            headingSamples: headingSamples,
-            outline: RoomCaptureOutlineInput(source: "traced", worldCorners: outline, closingTap: outline.first),
-            rooms: [
-                RoomCaptureRoomInput(
-                    id: "room-1", label: nil, labelSource: "none", floorIndex: 0, heightM: nil,
-                    worldCorners: outline, closingTap: outline.first, openings: openings
-                ),
-            ],
-            quality: RoomCaptureQualityInput(pointCloudDensityBasis: "lidar-depth", expectedRoomCount: 1)
+        return RoomCaptureSession.roomPlanSingleRoom(
+            captureId: captureId, capturedAtEpoch: Int(startedAt.timeIntervalSince1970), headingSamples: headingSamples,
+            declinationDeg: declinationDeg, declinationProvenance: declinationProvenance, trace: trace,
+            openings: openings
         )
     }
 
@@ -183,48 +192,21 @@ public final class RoomPlanCaptureController: NSObject {
 
     /// Each wall's local +X axis (`transform.columns.0`) spans its width
     /// (`dimensions.x`); the two endpoints are the wall center offset by
-    /// half that span each way. Chain endpoints greedily, nearest-first,
-    /// starting from an arbitrary wall — a straightforward, unverified
-    /// (no device to test on) reconstruction of the design doc's "on iOS 16,
-    /// chain wall endpoints together".
-    private static func chainWallOutline(_ walls: [CapturedRoom.Surface]) throws -> [Vec3] {
-        guard walls.count >= 3 else { throw RoomCaptureError("Need at least 3 walls to trace an outline") }
-        var endpoints: [(Vec3, Vec3)] = walls.map { wall in
+    /// half that span each way. The chaining and closure maths live in
+    /// `RoomPlanWallChain` so they are tested on every platform.
+    private static func chainWallOutline(_ walls: [CapturedRoom.Surface]) throws -> RoomPlanWallTrace {
+        try RoomPlanWallChain.trace(walls.map { wall in
             let center = worldPosition(wall.transform)
             let xAxis = wall.transform.columns.0
             let halfSpan = Double(wall.dimensions.x) / 2.0
-            let dir = Vec3(x: Double(xAxis.x), y: 0, z: Double(xAxis.z))
-            let norm = (dir.x * dir.x + dir.z * dir.z).squareRoot()
-            let unit = norm > 0 ? Vec3(x: dir.x / norm, y: 0, z: dir.z / norm) : Vec3(x: 1, y: 0, z: 0)
-            return (
-                Vec3(x: center.x - unit.x * halfSpan, y: center.y, z: center.z - unit.z * halfSpan),
-                Vec3(x: center.x + unit.x * halfSpan, y: center.y, z: center.z + unit.z * halfSpan)
+            let norm = (Double(xAxis.x) * Double(xAxis.x) + Double(xAxis.z) * Double(xAxis.z)).squareRoot()
+            let ux = norm > 0 ? Double(xAxis.x) / norm : 1
+            let uz = norm > 0 ? Double(xAxis.z) / norm : 0
+            return RoomPlanWallSegment(
+                start: Vec3(x: center.x - ux * halfSpan, y: center.y, z: center.z - uz * halfSpan),
+                end: Vec3(x: center.x + ux * halfSpan, y: center.y, z: center.z + uz * halfSpan)
             )
-        }
-        var outline: [Vec3] = []
-        let current = endpoints.removeFirst()
-        outline.append(current.0)
-        outline.append(current.1)
-        while !endpoints.isEmpty {
-            var bestIndex = 0
-            var bestFlip = false
-            var bestDist = Double.infinity
-            for (i, pair) in endpoints.enumerated() {
-                let dA = distance(outline.last!, pair.0)
-                let dB = distance(outline.last!, pair.1)
-                if dA < bestDist { bestDist = dA; bestIndex = i; bestFlip = false }
-                if dB < bestDist { bestDist = dB; bestIndex = i; bestFlip = true }
-            }
-            let next = endpoints.remove(at: bestIndex)
-            outline.append(bestFlip ? next.0 : next.1)
-        }
-        return outline
-    }
-
-    private static func distance(_ a: Vec3, _ b: Vec3) -> Double {
-        let dx = a.x - b.x
-        let dz = a.z - b.z
-        return (dx * dx + dz * dz).squareRoot()
+        })
     }
 }
 
