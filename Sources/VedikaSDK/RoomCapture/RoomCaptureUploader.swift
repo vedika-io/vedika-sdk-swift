@@ -48,4 +48,55 @@ public struct RoomCaptureUploader {
         let capture = try RoomCaptureGeometry.buildRoomCapture(session)
         return try await upload(capture, zoneResolution: zoneResolution, deviceAttestation: deviceAttestation, idempotencyKey: idempotencyKey)
     }
+
+    /// Keeps a finished capture in the customer's account through
+    /// `POST /v2/astrology/vastu/scans/save` (`snapshot.capture`). Only the
+    /// capture JSON is stored; no mesh or camera image is ever uploaded.
+    ///
+    /// This call is billed (USD 0.005 per save) and needs account scan
+    /// storage enabled on the deployment; otherwise the API answers
+    /// `503 SCAN_STORAGE_DISABLED` before any charge.
+    ///
+    /// The caller supplies and retains `scanId` (16-128 characters of
+    /// `A-Za-z0-9_-`, for example a UUID string). It is the retry identity:
+    /// after a timeout or a `503`, call again with the SAME `scanId` and the
+    /// SAME content so the save completes without a second charge. A changed
+    /// body for a used `scanId` returns `409`. Scan routes take no
+    /// `Idempotency-Key` (the API answers 422 to one), so this method has none.
+    ///
+    /// `retentionDays` is 1-30. `propertyId` groups the scans of one property
+    /// and follows the same pattern as `scanId`. Check `data.persistence`:
+    /// `account-store` means the scan was kept; `preview-only` (keyless
+    /// sandbox) means nothing was stored.
+    public func saveCapture(
+        _ capture: VastuRoomCapture, scanId: String, propertyId: String, title: String, retentionDays: Int,
+        deviceAttestation: VastuDeviceAttestation? = nil
+    ) async throws -> VastuScanResponse<VastuScansSaveData> {
+        guard Self.isValidScanIdentifier(scanId) else {
+            throw VedikaApiError("scanId must be 16-128 characters of A-Z a-z 0-9 _ -")
+        }
+        guard Self.isValidScanIdentifier(propertyId) else {
+            throw VedikaApiError("propertyId must be 16-128 characters of A-Z a-z 0-9 _ -")
+        }
+        guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title.utf8.count <= 160 else {
+            throw VedikaApiError("title must be nonblank and at most 160 UTF-8 bytes")
+        }
+        guard (1...30).contains(retentionDays) else {
+            throw VedikaApiError("retentionDays must be 1-30")
+        }
+        return try await service.vastuScansSave(
+            VastuScansSaveRequest(
+                scanId: scanId, propertyId: propertyId, title: title, retentionDays: retentionDays,
+                snapshot: VastuScanSnapshot(inputSource: "device-reported", capture: capture),
+                deviceAttestation: deviceAttestation
+            )
+        )
+    }
+
+    private static func isValidScanIdentifier(_ value: String) -> Bool {
+        guard (16...128).contains(value.utf8.count) else { return false }
+        return value.utf8.allSatisfy { byte in
+            (48...57).contains(byte) || (65...90).contains(byte) || (97...122).contains(byte) || byte == 95 || byte == 45
+        }
+    }
 }
