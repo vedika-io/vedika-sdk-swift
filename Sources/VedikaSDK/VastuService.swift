@@ -4827,7 +4827,12 @@ public enum VastuContracts {
 public final class VastuService {
     private static let base = "/v2/astrology/vastu"
 
-    private unowned let client: VedikaClient
+    /// Strong on purpose. `VedikaClient.vastu` builds a fresh service per
+    /// access instead of caching one, so there is no retain cycle, and a
+    /// service (or a helper such as `RoomCaptureUploader`) obtained from a
+    /// temporary client keeps that client alive instead of reading a
+    /// released `unowned` reference and crashing.
+    private let client: VedikaClient
 
     init(client: VedikaClient) {
         self.client = client

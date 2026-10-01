@@ -16,7 +16,7 @@ import Foundation
 /// policy, `get`/`post` primitives, response handling) does not need to
 /// change to add one.
 public final class VedikaClient {
-    private static let sdkVersion = "vedika-swift/1.1.0"
+    private static let sdkVersion = "vedika-swift/1.1.1"
 
     /// Two extra attempts for network failures and 5xx responses. Either
     /// can follow a completed charge, so billed requests must retain their
@@ -51,7 +51,8 @@ public final class VedikaClient {
     /// Vastu Shastra: plot geometry, mandala projection, entrance/room/
     /// placement rules, compliance audits, scoring, and floor-plan
     /// generation.
-    public private(set) lazy var vastu: VastuService = VastuService(client: self)
+    /// Stateless façade over this client; cheap to create on each access.
+    public var vastu: VastuService { VastuService(client: self) }
 
     /// The underlying `URLSession`. Redirect-following is refused via
     /// `RedirectRefusingDelegate` on purpose (credential-routing
