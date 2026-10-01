@@ -16,7 +16,7 @@ import PackageDescription
 // `github.com/vedika-io/vedika-sdk-swift`, where it sits at the repository
 // root and is installable by URL:
 //
-//     .package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.1.1")
+//     .package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.2.0")
 //
 // A local path consumer still works: `.package(path: "../vedika/sdks/swift")`.
 // This directory remains the source of truth; the mirror is synced from it.
