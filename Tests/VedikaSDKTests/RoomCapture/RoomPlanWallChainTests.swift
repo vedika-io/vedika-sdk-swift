@@ -73,14 +73,15 @@ final class RoomPlanWallChainTests: XCTestCase {
     }
 
     func testCentimetreJoinsSnapAndTheMeasuredClosureGapIsKept() throws {
-        // 4 cm slop at each join and 3 cm at the close: all within tolerance.
+        // 4 cm slop at two joins and 3 cm at the third: all within tolerance; the widest seam is reported.
         let walls = [wall(0, 0, 4, 0), wall(4.04, 0, 4, 3), wall(4, 3.04, 0, 3), wall(0.03, 3, 0, 0)]
         let trace = try RoomPlanWallChain.trace(walls)
         XCTAssertEqual(trace.corners.count, 4)
-        XCTAssertEqual(trace.closureGapM, 0.03, accuracy: 1e-9)
+        XCTAssertEqual(trace.closureGapM, 0, accuracy: 1e-9)
+        XCTAssertEqual(trace.maxSeamGapM, 0.04, accuracy: 1e-9)
         let capture = try build(trace)
         XCTAssertTrue(capture.quality.polygonClosure)
-        XCTAssertEqual(try XCTUnwrap(capture.quality.closureGapM), 0.03, accuracy: 1e-9)
+        XCTAssertEqual(try XCTUnwrap(capture.quality.closureGapM), 0.04, accuracy: 1e-9)
     }
 
     func testAMissingWallLeavesAnHonestlyOpenLoop() throws {
