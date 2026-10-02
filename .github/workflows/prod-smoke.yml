@@ -1,0 +1,25 @@
+name: Production smoke
+
+on:
+  schedule:
+    - cron: '43 21 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prod-smoke:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the production smoke tests
+        env:
+          VEDIKA_PROD_SMOKE_KEY: ${{ secrets.VEDIKA_PROD_SMOKE_KEY }}
+        run: |
+          if [ -z "${VEDIKA_PROD_SMOKE_KEY:-}" ]; then
+            echo "::error::VEDIKA_PROD_SMOKE_KEY secret is not set"
+            exit 1
+          fi
+          swift test --filter ProdSmokeTests
