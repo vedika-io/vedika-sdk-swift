@@ -16,8 +16,6 @@
 // UNVERIFIED ON A DEVICE: world tracking with real plane detection does not
 // run in the iOS Simulator. This file is a compile-time proof only — the
 // raycast/tracking-state plumbing below has never run against a live scan.
-//
-// Vedika-Task: R-004
 #if os(iOS)
 import ARKit
 import Foundation

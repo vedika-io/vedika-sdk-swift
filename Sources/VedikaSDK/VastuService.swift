@@ -4836,7 +4836,7 @@ public final class VastuService {
     /// service (or a helper such as `RoomCaptureUploader`) obtained from a
     /// temporary client keeps that client alive instead of reading a
     /// released `unowned` reference and crashing.
-    private let client: VedikaClient
+    let client: VedikaClient
 
     init(client: VedikaClient) {
         self.client = client
@@ -4865,9 +4865,8 @@ public final class VastuService {
     /// `reference/gate-obstructions`) are GET-only (a POST returns 405)
     /// and `direction/declination` is a GET+POST dual whose verified path
     /// is GET-with-query, so both dispatch GET (params become query
-    /// string); everything else is POST. Mirrors
-    /// `VASTU_GET_REFERENCE_ROUTES` + `VASTU_DUAL_ROUTE` in
-    /// `rust/vedika-api-rust/crates/vedika-v2/src/vastu.rs`.
+    /// string); everything else is POST, matching the
+    /// server's route table.
     @discardableResult
     public func vastu(_ op: String, params: [String: Any] = [:], idempotencyKey: String? = nil) async throws -> [String: Any] {
         let path = Self.stripLeadingSlash(op)

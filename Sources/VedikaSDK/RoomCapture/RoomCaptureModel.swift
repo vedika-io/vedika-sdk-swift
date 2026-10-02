@@ -21,8 +21,6 @@ import Foundation
 /// the iOS-only Core Location bridge, is a separate, optional source of real
 /// heading samples for callers that want `"true"` or `"magnetic"` instead —
 /// see its header.)
-///
-/// Vedika-Task: R-004
 public final class RoomCaptureModel {
 
     public static let closeSnapM = 0.3

@@ -15,8 +15,6 @@ import Foundation
 /// macOS and iOS, and is exercised in `swift test` directly (see
 /// `CredentialRoutingTests.swift`'s loopback-server pattern), unlike the
 /// RoomPlan/ARKit capture controllers, which are iOS-only and device-only.
-///
-/// Vedika-Task: R-004
 public struct RoomCaptureUploader {
     private let service: VastuService
 

@@ -5,8 +5,6 @@
 // port (`sdks/android-ar/src/main/kotlin/io/vedika/sdk/ar/RoomCaptureTypes.kt`)
 // builds on a bare JVM — see that file's header for why that matters for
 // cross-platform parity (this is a line-for-line Swift port of it).
-//
-// Vedika-Task: R-004
 
 import Foundation
 

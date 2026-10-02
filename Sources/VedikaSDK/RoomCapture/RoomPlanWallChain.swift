@@ -3,8 +3,6 @@
 // did and did not measure. It lives outside the `#if canImport(RoomPlan)`
 // controller so it builds and is tested on every platform (RoomPlan itself
 // cannot run on macOS CI).
-//
-// Vedika-Task: R-004
 import Foundation
 
 /// One wall's measured floor-plane endpoints, in Y-up world metres.

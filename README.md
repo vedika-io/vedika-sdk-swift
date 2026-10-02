@@ -10,7 +10,7 @@ resolve a package from a subdirectory of a larger repository.
 ## Install
 
 ```swift
-.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.2.0")
+.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.3.0")
 ```
 
 Then add `VedikaSDK` to your target's dependencies.
@@ -38,6 +38,18 @@ are iOS-only and need a physical device with LiDAR for the RoomPlan path.
 
 Add `NSCameraUsageDescription` (and `NSLocationWhenInUseUsageDescription` for the true
 heading sample) to your app's Info.plist.
+
+## Ask about a report PDF (1.3.0)
+
+```swift
+let upload = try await client.vastu.uploadVastuReport(pdfData, idempotencyKey: savedKey)
+let answer = try await client.vastu.askVastuReport(
+    "Is my kitchen placement good?",
+    reportRef: VastuReportRef(id: upload["uploadId"] as! String))
+```
+
+Keep `savedKey` and reuse it on a retry: the upload is billed once per key.
+Follow-ups pass `conversationId` from the first answer.
 
 ## Keys
 

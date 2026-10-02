@@ -17,7 +17,6 @@ import Foundation
 import RoomPlan
 import ARKit
 
-/// Vedika-Task: R-004
 public enum RoomCaptureAvailability {
     public enum Path: String, Sendable {
         /// LiDAR devices, iOS 16+: `RoomCaptureView`/`RoomCaptureSession` -> `CapturedRoom`.

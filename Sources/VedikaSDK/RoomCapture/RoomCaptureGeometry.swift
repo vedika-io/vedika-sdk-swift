@@ -24,8 +24,6 @@ import Foundation
 ///  3. Rotate clockwise by theta, move the traced outline's lower-left to 0, 0,
 ///     snap to 1 cm, drop corners within 2 cm of a straight run, and start
 ///     each ring counter-clockwise at its lowest corner.
-///
-/// Vedika-Task: R-004
 public enum RoomCaptureGeometry {
 
     public static let roomCaptureSchema = "vedika.roomCapture/1"

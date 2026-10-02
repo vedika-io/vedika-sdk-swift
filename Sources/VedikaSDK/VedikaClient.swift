@@ -16,7 +16,7 @@ import Foundation
 /// policy, `get`/`post` primitives, response handling) does not need to
 /// change to add one.
 public final class VedikaClient {
-    private static let sdkVersion = "vedika-swift/1.2.0"
+    private static let sdkVersion = "vedika-swift/1.3.0"
 
     /// Two extra attempts for network failures and 5xx responses. Either
     /// can follow a completed charge, so billed requests must retain their
@@ -194,6 +194,23 @@ public final class VedikaClient {
             request.setValue(value, forHTTPHeaderField: key)
         }
         request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+        return try await execute(request)
+    }
+
+    /// Sends one PDF as `multipart/form-data` with the caller's retained key.
+    /// Retries reuse the same request, so the same key, and cannot double-bill.
+    func postPDFUpload(_ path: String, pdf: Data, filename: String, idempotencyKey: String) async throws -> [String: Any] {
+        guard let url = URL(string: config.baseURL + path) else {
+            throw VedikaApiError("Invalid path: \(path)")
+        }
+        let boundary = "vedika-\(UUID().uuidString)"
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        for (key, value) in headers(idempotencyKey: idempotencyKey) {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = VastuReportChat.multipartBody(pdf: pdf, filename: filename, boundary: boundary)
         return try await execute(request)
     }
 

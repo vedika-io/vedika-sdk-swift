@@ -25,8 +25,6 @@
 // fixes for exactly this kind of gap (heading-filter-off + report-once);
 // the same class of defect is plausible here and would only surface on a
 // real device.
-//
-// Vedika-Task: R-004
 #if os(iOS)
 import CoreLocation
 import Foundation

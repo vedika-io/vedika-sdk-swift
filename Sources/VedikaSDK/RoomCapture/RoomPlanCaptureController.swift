@@ -6,8 +6,7 @@
 //
 // Verified against the installed iOS 26.2 SDK's own
 // `RoomPlan.swiftmodule/*.swiftinterface` this pass (not against the web or
-// memory) — every `(TV)` the design doc (`docs/ops/2026-09-16-vastu-design-ar-room-capture.md`,
-// §3) flagged is resolved there:
+// memory) — every `(TV)` the design notes flagged is resolved there:
 //   - `CapturedRoom.floors`, `Surface.polygonCorners`, `Section`/`sections`,
 //     `StructureBuilder`, `RoomCaptureSession.init(arSession:)`: all
 //     `@available(iOS 17.0, *)`, confirming the doc's guess.
@@ -27,8 +26,6 @@
 // `swift build` for iOS) proof only. Everything below the wall-chaining
 // comment is this session's best-effort geometry, not something this
 // session could run against a real scan.
-//
-// Vedika-Task: R-004
 #if os(iOS) && canImport(RoomPlan)
 import ARKit
 import Foundation
