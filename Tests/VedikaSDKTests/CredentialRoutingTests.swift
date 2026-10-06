@@ -47,8 +47,8 @@ final class CredentialRoutingTests: XCTestCase {
 
     func testTypedInventoryExposesEveryMountedLogicalOperationExactlyOnce() {
         let paths = VastuOperation.allCases.map(\.rawValue)
-        XCTAssertEqual(paths.count, 98)
-        XCTAssertEqual(Set(paths).count, 98)
+        XCTAssertEqual(paths.count, 147)
+        XCTAssertEqual(Set(paths).count, 147)
         XCTAssertEqual(VastuOperation.assessments.rawValue, "assessments")
         XCTAssertEqual(VastuOperation.arTrueNorthCalibrate.rawValue, "ar/true-north-calibrate")
     }

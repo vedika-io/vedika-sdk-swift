@@ -16,7 +16,7 @@ import Foundation
 /// policy, `get`/`post` primitives, response handling) does not need to
 /// change to add one.
 public final class VedikaClient {
-    private static let sdkVersion = "vedika-swift/1.3.0"
+    private static let sdkVersion = "vedika-swift/1.3.1"
 
     /// Two extra attempts for network failures and 5xx responses. Either
     /// can follow a completed charge, so billed requests must retain their
@@ -47,6 +47,29 @@ public final class VedikaClient {
             ].map { prefix + $0 }
         }
     )
+
+    /// Header spelling per operation. The live spec names `X-Idempotency-Key` on
+    /// `/api/v1/astrology/query` and `Idempotency-Key` on the Vastu operations.
+    static func idempotencyHeaderName(for path: String) -> String {
+        bareAPIPath(path) == "/api/v1/astrology/query" ? "X-Idempotency-Key" : "Idempotency-Key"
+    }
+
+    /// True for the paths where the client may attach a key the caller did not
+    /// supply: the Vastu operations, which accept one, and the report-chat
+    /// query. Anything else (the free `/sandbox` routes, unknown paths) gets a
+    /// key only when the caller passes one, because a key sent to an operation
+    /// that does not take it is answered 422 `IDEMPOTENCY_NOT_SUPPORTED`.
+    static func acceptsAutomaticKey(_ path: String) -> Bool {
+        let bare = bareAPIPath(path)
+        return bare.hasPrefix("/v2/vastu/") || bare.hasPrefix("/v2/astrology/vastu/")
+            || bare == "/api/v1/astrology/query"
+    }
+
+    private static func bareAPIPath(_ path: String) -> String {
+        String(path.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false).first ?? "")
+    }
+
+    private static let idempotencyHeaderNames = ["Idempotency-Key", "X-Idempotency-Key"]
 
     /// Linear backoff base; attempt 0 waits this long, attempt 1 waits 2x, etc.
     private static let retryBackoffBaseSeconds: UInt64 = 250_000_000 // 250ms, in nanoseconds
@@ -122,7 +145,7 @@ public final class VedikaClient {
         session.finishTasksAndInvalidate()
     }
 
-    private func headers(idempotencyKey: String? = nil) -> [String: String] {
+    private func headers(idempotencyKey: String? = nil, path: String = "") -> [String: String] {
         var result = [
             "Authorization": "Bearer \(config.apiKey)",
             "Content-Type": "application/json",
@@ -130,7 +153,7 @@ public final class VedikaClient {
             "X-SDK": Self.sdkVersion,
         ]
         if let idempotencyKey {
-            result["Idempotency-Key"] = idempotencyKey
+            result[Self.idempotencyHeaderName(for: path)] = idempotencyKey
         }
         return result
     }
@@ -148,13 +171,14 @@ public final class VedikaClient {
             throw VedikaApiError("Invalid path: \(path)")
         }
         let pathOnly = String(path.split(separator: "?", maxSplits: 1).first ?? "")
-        let key = idempotencyKey ?? (Self.billedVastuGetPaths.contains(pathOnly) ? UUID().uuidString : nil)
+        let automatic = idempotencyKey == nil && Self.billedVastuGetPaths.contains(pathOnly)
+        let key = idempotencyKey ?? (automatic ? UUID().uuidString : nil)
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        for (key, value) in headers(idempotencyKey: key) {
-            request.setValue(value, forHTTPHeaderField: key)
+        for (name, value) in headers(idempotencyKey: key, path: path) {
+            request.setValue(value, forHTTPHeaderField: name)
         }
-        return try await execute(request)
+        return try await execute(request, keyIsAutomatic: automatic)
     }
 
     /// Sends a POST request to the Vedika API.
@@ -187,14 +211,15 @@ public final class VedikaClient {
         if bodyIdentity && idempotencyKey != nil {
             throw VedikaApiError("Scan operations use scanId or requestId in the body; do not pass an Idempotency-Key")
         }
-        let key: String? = bodyIdentity ? nil : (idempotencyKey ?? UUID().uuidString)
+        let automatic = !bodyIdentity && idempotencyKey == nil && Self.acceptsAutomaticKey(path)
+        let key: String? = bodyIdentity ? nil : (idempotencyKey ?? (automatic ? UUID().uuidString : nil))
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        for (key, value) in headers(idempotencyKey: key) {
-            request.setValue(value, forHTTPHeaderField: key)
+        for (name, value) in headers(idempotencyKey: key, path: path) {
+            request.setValue(value, forHTTPHeaderField: name)
         }
         request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
-        return try await execute(request)
+        return try await execute(request, keyIsAutomatic: automatic)
     }
 
     /// Sends one PDF as `multipart/form-data` with the caller's retained key.
@@ -206,40 +231,68 @@ public final class VedikaClient {
         let boundary = "vedika-\(UUID().uuidString)"
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        for (key, value) in headers(idempotencyKey: idempotencyKey) {
-            request.setValue(value, forHTTPHeaderField: key)
+        for (name, value) in headers(idempotencyKey: idempotencyKey, path: path) {
+            request.setValue(value, forHTTPHeaderField: name)
         }
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.httpBody = VastuReportChat.multipartBody(pdf: pdf, filename: filename, boundary: boundary)
         return try await execute(request)
     }
 
+    /// True when resending `request` cannot be billed twice: a read, a request
+    /// carrying an idempotency key, or a scan operation whose identity is in the
+    /// body. A keyless billed POST is never retried after a network error or a
+    /// 5xx, because either can follow a completed charge.
+    private func isReplaySafe(_ request: URLRequest) -> Bool {
+        if request.httpMethod == "GET" { return true }
+        let headers = request.allHTTPHeaderFields ?? [:]
+        if Self.idempotencyHeaderNames.contains(where: { name in headers.keys.contains { $0.caseInsensitiveCompare(name) == .orderedSame } }) {
+            return true
+        }
+        return usesBodyIdentity(request.url?.path ?? "")
+    }
+
     /// Runs `request`, retrying transient failures (see `maxRetries`).
-    /// Every POST (except the scan operations, whose identity is in the body)
-    /// and mounted billed Vastu GET carries an `Idempotency-Key` (see `post` and `get`), so a retry of the exact same
-    /// `URLRequest` (same body, same key) cannot double-charge even if the
-    /// first attempt's request actually reached the server before the
-    /// network dropped the response.
-    private func execute(_ request: URLRequest, attempt: Int = 0) async throws -> [String: Any] {
+    /// Billed Vastu calls carry an `Idempotency-Key`, so a retry of the exact
+    /// same `URLRequest` (same body, same key) cannot double-charge even if the
+    /// first attempt reached the server before the network dropped the response.
+    ///
+    /// - Parameter keyIsAutomatic: the key was generated here, not supplied by
+    ///   the caller. If the endpoint answers 422 `IDEMPOTENCY_NOT_SUPPORTED`
+    ///   (no charge was attempted), the request is sent once more without the
+    ///   key and without any automatic retry, since it is no longer replay-safe.
+    ///   A caller's own key is never dropped: that case throws
+    ///   `VedikaIdempotencyNotSupportedError`.
+    private func execute(_ request: URLRequest, attempt: Int = 0, keyIsAutomatic: Bool = false) async throws -> [String: Any] {
+        let replaySafe = isReplaySafe(request)
         let data: Data
         let response: URLResponse
         do {
             (data, response) = try await session.data(for: request)
         } catch {
-            if attempt < Self.maxRetries {
+            if attempt < Self.maxRetries && replaySafe {
                 try? await Task.sleep(nanoseconds: Self.retryBackoffBaseSeconds * UInt64(attempt + 1))
-                return try await execute(request, attempt: attempt + 1)
+                return try await execute(request, attempt: attempt + 1, keyIsAutomatic: keyIsAutomatic)
             }
             throw VedikaApiError("Network error: \(error.localizedDescription)")
         }
         guard let httpResponse = response as? HTTPURLResponse else {
             throw VedikaApiError("Invalid response (not HTTP)")
         }
-        if httpResponse.statusCode >= 500 && attempt < Self.maxRetries {
+        if httpResponse.statusCode == 422, keyIsAutomatic, Self.errorCode(in: data) == "IDEMPOTENCY_NOT_SUPPORTED" {
+            var keyless = request
+            for name in Self.idempotencyHeaderNames { keyless.setValue(nil, forHTTPHeaderField: name) }
+            return try await execute(keyless, attempt: Self.maxRetries, keyIsAutomatic: false)
+        }
+        if httpResponse.statusCode >= 500 && attempt < Self.maxRetries && replaySafe {
             try? await Task.sleep(nanoseconds: Self.retryBackoffBaseSeconds * UInt64(attempt + 1))
-            return try await execute(request, attempt: attempt + 1)
+            return try await execute(request, attempt: attempt + 1, keyIsAutomatic: keyIsAutomatic)
         }
         return try handleResponse(httpResponse, data: data)
+    }
+
+    private static func errorCode(in data: Data) -> String? {
+        ((try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any])?["code"] as? String
     }
 
     private func handleResponse(_ response: HTTPURLResponse, data: Data) throws -> [String: Any] {
@@ -260,8 +313,17 @@ public final class VedikaClient {
         case 402:
             throw VedikaInsufficientCredits(
                 body["error"] as? String ?? "Insufficient wallet balance", body: body)
+        case 422 where body["code"] as? String == "IDEMPOTENCY_NOT_SUPPORTED":
+            throw VedikaIdempotencyNotSupportedError(
+                body["message"] as? String
+                    ?? "This endpoint does not accept an idempotency key; call again without one",
+                body: body)
         case 429:
-            let retryAfter = response.value(forHTTPHeaderField: "Retry-After").flatMap(Int.init)
+            // The body `code` names the limiter that refused the call; the
+            // rate-limit headers describe the per-minute limiter only, so
+            // nothing is decided from them. This client never retries a 429.
+            let bodyRetry = (body["retryAfter"] as? NSNumber)?.intValue
+            let retryAfter = bodyRetry ?? response.value(forHTTPHeaderField: "Retry-After").flatMap(Int.init)
             throw VedikaRateLimitError(
                 body["message"] as? String ?? "Rate limit exceeded",
                 body: body,

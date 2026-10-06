@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 import XCTest
 @testable import VedikaSDK
 
@@ -37,11 +38,29 @@ final class VastuResponseFixtureTests: XCTestCase {
         )
     }
 
+    func testScalarComparisonPreservesJSONTypes() throws {
+        let raw = try JSONSerialization.jsonObject(with: Data("{\"flag\":true,\"number\":1,\"empty\":null}".utf8)) as! [String: Any]
+        XCTAssertTrue(equivalent(true, raw["flag"]!))
+        XCTAssertTrue(equivalent(1, raw["number"]!))
+        XCTAssertTrue(equivalent(1.0, raw["number"]!))
+        XCTAssertFalse(equivalent(true, raw["number"]!))
+        XCTAssertFalse(equivalent(1, raw["flag"]!))
+        XCTAssertTrue(equivalent(NSNull(), raw["empty"]!))
+        XCTAssertFalse(equivalent(false, raw["empty"]!))
+        let decimal = try JSONSerialization.jsonObject(with: Data("[30.000000000000004]".utf8)) as! [NSNumber]
+        XCTAssertTrue(equivalent(decimal[0].doubleValue, decimal[0]))
+        XCTAssertFalse(equivalent(decimal[0].doubleValue.nextUp, decimal[0]))
+        XCTAssertFalse(equivalent(Int64(9007199254740993), Int64(9007199254740992)))
+        XCTAssertFalse(equivalent(1.0, raw["flag"]!))
+    }
+
     func testEveryPublicGetterAgainstAllRustResponses() throws {
         let url = Self.monorepoFixtureURL ?? Self.bundledFixtureURL
         let corpus = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
         let demos = corpus["demos"] as! [String: [String: Any]]
         let types: [String: String] = [
+            "vastu__ar_capture_merge": "VastuArCaptureMergeData",
+            "vastu__plot_from_survey": "VastuPlotFromSurveyData",
             "vastu__reference_gate_obstructions": "VastuCatalogReferenceData",
             "vastu__entrance_obstruction_check": "VastuObstructionData",
             "vastu__direction_sun_path": "VastuSunPathData",
@@ -120,6 +139,11 @@ final class VastuResponseFixtureTests: XCTestCase {
             "vastu__plan_from_requirements": "VastuPlanGenerateData",
             "vastu__plan_optimize": "VastuPlanOptimizeData",
             "vastu__plan_analyze": "VastuPlanAuditData",
+            "vastu__plan_import_dxf": "VastuPlanImportDxfData",
+            "vastu__plan_export_dxf": "VastuPlanExportDxfData",
+            "vastu__plan_export_ifc": "VastuPlanExportIfcData",
+            "vastu__plan_convert_units": "VastuPlanConvertUnitsData",
+            "vastu__plan_import_ifc": "VastuPlanImportIfcData",
             "vastu__plan_upload": "VastuPlanAuditData",
             "vastu__plan_report": "VastuPlanAuditData",
             "vastu__ar_heatmap_raster": "VastuArHeatmapRasterData",
@@ -137,12 +161,14 @@ final class VastuResponseFixtureTests: XCTestCase {
             "vastu__fusion_chart": "VastuFusionChartData",
             "vastu__compare_before_after_remedy": "VastuRemedyComparisonData",
         ]
-        XCTAssertEqual(demos.count, 94)
-        XCTAssertEqual(Set(types.values).count, 58)
+        XCTAssertEqual(demos.count, 101)
+        XCTAssertEqual(Set(types.values).count, 65)
         for (key, response) in demos {
             let raw = response["data"] as! [String: Any]
             let actual: [String: Any]
             switch types[key]! {
+            case "VastuArCaptureMergeData": actual = readVastuArCaptureMergeData(VastuArCaptureMergeData(raw: raw))
+            case "VastuPlotFromSurveyData": actual = readVastuPlotFromSurveyData(VastuPlotFromSurveyData(raw: raw))
             case "VastuArAnchorRecommendationsData": actual = readVastuArAnchorRecommendationsData(VastuArAnchorRecommendationsData(raw: raw))
             case "VastuArRoomCaptureData": actual = readVastuArRoomCaptureData(VastuArRoomCaptureData(raw: raw))
             case "VastuArAttestationChallengeData": actual = readVastuArAttestationChallengeData(VastuArAttestationChallengeData(raw: raw))
@@ -202,6 +228,11 @@ final class VastuResponseFixtureTests: XCTestCase {
             case "VastuWallAnalysisData": actual = readVastuWallAnalysisData(VastuWallAnalysisData(raw: raw))
             case "VastuZoneReferenceData": actual = readVastuZoneReferenceData(VastuZoneReferenceData(raw: raw))
             case "VastuZoneWiseScoreData": actual = readVastuZoneWiseScoreData(VastuZoneWiseScoreData(raw: raw))
+            case "VastuPlanImportDxfData": actual = readVastuPlanImportDxfData(VastuPlanImportDxfData(raw: raw))
+            case "VastuPlanExportIfcData": actual = readVastuPlanExportIfcData(VastuPlanExportIfcData(raw: raw))
+            case "VastuPlanConvertUnitsData": actual = readVastuPlanConvertUnitsData(VastuPlanConvertUnitsData(raw: raw))
+            case "VastuPlanExportDxfData": actual = readVastuPlanExportDxfData(VastuPlanExportDxfData(raw: raw))
+            case "VastuPlanImportIfcData": actual = readVastuPlanImportIfcData(VastuPlanImportIfcData(raw: raw))
             default: return XCTFail("Unmapped response: \(key)")
             }
             for (field, value) in actual {
@@ -239,7 +270,18 @@ private func equivalent(_ actual: Any, _ expected: Any) -> Bool {
     if let left = actual as? [Any], let right = expected as? [Any] {
         return left.count == right.count && zip(left, right).allSatisfy { equivalent($0, $1) }
     }
-    return NSDictionary(dictionary: ["value": actual]).isEqual(to: ["value": expected])
+    // A Double getter must equal the decoded NSNumber's Double value exactly.
+    // Linux may decode long JSON decimals as NSDecimalNumber, whose JSON
+    // rendering retains more decimal digits than its doubleValue conversion.
+    if Swift.type(of: actual) == Double.self, let left = actual as? Double,
+       let right = expected as? NSNumber, CFGetTypeID(right) != CFBooleanGetTypeID() {
+        return left == right.doubleValue
+    }
+    // Linux Foundation dictionary equality differs for native Bool and decoded
+    // CFBoolean. Compare JSON scalars, preserving Boolean versus numeric types.
+    guard let left = try? JSONSerialization.data(withJSONObject: [actual]),
+          let right = try? JSONSerialization.data(withJSONObject: [expected]) else { return false }
+    return left == right
 }
 
 private func readVastuEntrancePadaDataPada(_ value: VastuEntrancePadaDataPada) -> [String: Any] {
@@ -1259,6 +1301,8 @@ private func readVastuEntranceRecommendData(_ value: VastuEntranceRecommendData)
     [
         "facing": (value.facing as Any?) ?? NSNull(),
         "bestEntrancePada": (value.bestEntrancePada as Any?) ?? NSNull(),
+        "bestEntranceIsUnfavourable": (value.bestEntranceIsUnfavourable as Any?) ?? NSNull(),
+        "bestEntranceNote": (value.bestEntranceNote as Any?) ?? NSNull(),
         "recommendedPadas": (value.recommendedPadas as Any?) ?? NSNull(),
         "avoidPadas": (value.avoidPadas as Any?) ?? NSNull(),
         "facingCaution": (value.facingCaution as Any?) ?? NSNull(),
@@ -1872,4 +1916,338 @@ private func readVastuZoneWiseScoreData(_ value: VastuZoneWiseScoreData) -> [Str
         "zoneWeightingNote": (value.zoneWeightingNote as Any?) ?? NSNull(),
         "scoring": (readVastuZoneWiseScoreDataScoring(value.scoring) as Any?) ?? NSNull(),
     ]
+}
+
+// CAD readers exercise nested getters while retaining additive source metadata.
+private func readVastuPlanImportDxfDataPlanPlot(_ value: VastuPlanImportDxfDataPlanPlot) -> [String: Any] {
+    var result = value.raw
+    result["width"] = (value.width as Any?) ?? NSNull()
+    result["length"] = (value.length as Any?) ?? NSNull()
+    result["polygon"] = (value.polygon as Any?) ?? NSNull()
+    result["units"] = (value.units as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportDxfDataPlanRoomsItem(_ value: VastuPlanImportDxfDataPlanRoomsItem) -> [String: Any] {
+    var result = value.raw
+    result["id"] = (value.id as Any?) ?? NSNull()
+    result["name"] = (value.name as Any?) ?? NSNull()
+    result["polygon"] = (value.polygon as Any?) ?? NSNull()
+    result["x"] = (value.x as Any?) ?? NSNull()
+    result["y"] = (value.y as Any?) ?? NSNull()
+    result["w"] = (value.w as Any?) ?? NSNull()
+    result["h"] = (value.h as Any?) ?? NSNull()
+    result["area"] = (value.area as Any?) ?? NSNull()
+    result["centre"] = (value.centre as Any?) ?? NSNull()
+    result["holes"] = (value.holes as Any?) ?? NSNull()
+    result["source"] = (value.source as Any?) ?? NSNull()
+    result["labelEntityId"] = (value.labelEntityId as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportDxfDataPlanOpeningsDoorsItem(_ value: VastuPlanImportDxfDataPlanOpeningsDoorsItem) -> [String: Any] {
+    var result = value.raw
+    result["id"] = (value.id as Any?) ?? NSNull()
+    result["type"] = (value.type as Any?) ?? NSNull()
+    result["line"] = (value.line as Any?) ?? NSNull()
+    result["width"] = (value.width as Any?) ?? NSNull()
+    result["centre"] = (value.centre as Any?) ?? NSNull()
+    result["source"] = (value.source as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportDxfDataPlanOpeningsWindowsItem(_ value: VastuPlanImportDxfDataPlanOpeningsWindowsItem) -> [String: Any] {
+    var result = value.raw
+    result["id"] = (value.id as Any?) ?? NSNull()
+    result["type"] = (value.type as Any?) ?? NSNull()
+    result["line"] = (value.line as Any?) ?? NSNull()
+    result["width"] = (value.width as Any?) ?? NSNull()
+    result["centre"] = (value.centre as Any?) ?? NSNull()
+    result["source"] = (value.source as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportDxfDataPlanOpenings(_ value: VastuPlanImportDxfDataPlanOpenings) -> [String: Any] {
+    var result = value.raw
+    result["doors"] = (value.doors?.map(readVastuPlanImportDxfDataPlanOpeningsDoorsItem) as Any?) ?? NSNull()
+    result["windows"] = (value.windows?.map(readVastuPlanImportDxfDataPlanOpeningsWindowsItem) as Any?) ?? NSNull()
+    result["units"] = (value.units as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportDxfDataPlan(_ value: VastuPlanImportDxfDataPlan) -> [String: Any] {
+    var result = value.raw
+    result["plot"] = (readVastuPlanImportDxfDataPlanPlot(value.plot) as Any?) ?? NSNull()
+    result["rooms"] = (value.rooms.map(readVastuPlanImportDxfDataPlanRoomsItem) as Any?) ?? NSNull()
+    result["openings"] = (value.openings.map(readVastuPlanImportDxfDataPlanOpenings) as Any?) ?? NSNull()
+    result["trueNorthDeg"] = (value.trueNorthDeg as Any?) ?? NSNull()
+    result["orientationDeg"] = (value.orientationDeg as Any?) ?? NSNull()
+    result["units"] = (value.units as Any?) ?? NSNull()
+    result["cadMetadata"] = (value.cadMetadata as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportDxfDataMappingReportItem(_ value: VastuPlanImportDxfDataMappingReportItem) -> [String: Any] {
+    var result = value.raw
+    result["entityId"] = (value.entityId as Any?) ?? NSNull()
+    result["handle"] = (value.handle as Any?) ?? NSNull()
+    result["stepId"] = (value.stepId as Any?) ?? NSNull()
+    result["entityType"] = (value.entityType as Any?) ?? NSNull()
+    result["layer"] = (value.layer as Any?) ?? NSNull()
+    result["role"] = (value.role as Any?) ?? NSNull()
+    result["status"] = (value.status as Any?) ?? NSNull()
+    result["planIds"] = (value.planIds as Any?) ?? NSNull()
+    result["reason"] = (value.reason as Any?) ?? NSNull()
+    result["parentId"] = (value.parentId as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportDxfDataReviewReasonsItem(_ value: VastuPlanImportDxfDataReviewReasonsItem) -> [String: Any] {
+    var result = value.raw
+    result["id"] = (value.id as Any?) ?? NSNull()
+    result["reason"] = (value.reason as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportDxfData(_ value: VastuPlanImportDxfData) -> [String: Any] {
+    var result = value.raw
+    result["plan"] = (readVastuPlanImportDxfDataPlan(value.plan) as Any?) ?? NSNull()
+    result["mappingReport"] = (value.mappingReport.map(readVastuPlanImportDxfDataMappingReportItem) as Any?) ?? NSNull()
+    result["needsReview"] = (value.needsReview as Any?) ?? NSNull()
+    result["reviewReasons"] = (value.reviewReasons.map(readVastuPlanImportDxfDataReviewReasonsItem) as Any?) ?? NSNull()
+    result["pricing"] = (value.pricing as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanExportDxfData(_ value: VastuPlanExportDxfData) -> [String: Any] {
+    var result = value.raw
+    result["dxf"] = (value.dxf as Any?) ?? NSNull()
+    result["contentType"] = (value.contentType as Any?) ?? NSNull()
+    result["fileName"] = (value.fileName as Any?) ?? NSNull()
+    result["version"] = (value.version as Any?) ?? NSNull()
+    result["unitsCode"] = (value.unitsCode as Any?) ?? NSNull()
+    result["trueNorthDeg"] = (value.trueNorthDeg as Any?) ?? NSNull()
+    result["zones"] = (value.zones as Any?) ?? NSNull()
+    result["roomCount"] = (value.roomCount as Any?) ?? NSNull()
+    result["openingCount"] = (value.openingCount as Any?) ?? NSNull()
+    result["dimensionCount"] = (value.dimensionCount as Any?) ?? NSNull()
+    result["findingCount"] = (value.findingCount as Any?) ?? NSNull()
+    result["needsReview"] = (value.needsReview as Any?) ?? NSNull()
+    result["pricing"] = (value.pricing as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcDataBuildingsItem(_ value: VastuPlanImportIfcDataBuildingsItem) -> [String: Any] {
+    var result = value.raw
+    result["id"] = (value.id as Any?) ?? NSNull()
+    result["name"] = (value.name as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcDataStoreysItemPlanPlot(_ value: VastuPlanImportIfcDataStoreysItemPlanPlot) -> [String: Any] {
+    var result = value.raw
+    result["width"] = (value.width as Any?) ?? NSNull()
+    result["length"] = (value.length as Any?) ?? NSNull()
+    result["polygon"] = (value.polygon as Any?) ?? NSNull()
+    result["units"] = (value.units as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcDataStoreysItemPlanRoomsItem(_ value: VastuPlanImportIfcDataStoreysItemPlanRoomsItem) -> [String: Any] {
+    var result = value.raw
+    result["id"] = (value.id as Any?) ?? NSNull()
+    result["name"] = (value.name as Any?) ?? NSNull()
+    result["polygon"] = (value.polygon as Any?) ?? NSNull()
+    result["x"] = (value.x as Any?) ?? NSNull()
+    result["y"] = (value.y as Any?) ?? NSNull()
+    result["w"] = (value.w as Any?) ?? NSNull()
+    result["h"] = (value.h as Any?) ?? NSNull()
+    result["area"] = (value.area as Any?) ?? NSNull()
+    result["centre"] = (value.centre as Any?) ?? NSNull()
+    result["holes"] = (value.holes as Any?) ?? NSNull()
+    result["source"] = (value.source as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcDataStoreysItemPlanOpeningsDoorsItem(_ value: VastuPlanImportIfcDataStoreysItemPlanOpeningsDoorsItem) -> [String: Any] {
+    var result = value.raw
+    result["id"] = (value.id as Any?) ?? NSNull()
+    result["type"] = (value.type as Any?) ?? NSNull()
+    result["line"] = (value.line as Any?) ?? NSNull()
+    result["width"] = (value.width as Any?) ?? NSNull()
+    result["centre"] = (value.centre as Any?) ?? NSNull()
+    result["source"] = (value.source as Any?) ?? NSNull()
+    result["name"] = (value.name as Any?) ?? NSNull()
+    result["openingHeight"] = (value.openingHeight as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcDataStoreysItemPlanOpeningsWindowsItem(_ value: VastuPlanImportIfcDataStoreysItemPlanOpeningsWindowsItem) -> [String: Any] {
+    var result = value.raw
+    result["id"] = (value.id as Any?) ?? NSNull()
+    result["type"] = (value.type as Any?) ?? NSNull()
+    result["line"] = (value.line as Any?) ?? NSNull()
+    result["width"] = (value.width as Any?) ?? NSNull()
+    result["centre"] = (value.centre as Any?) ?? NSNull()
+    result["source"] = (value.source as Any?) ?? NSNull()
+    result["name"] = (value.name as Any?) ?? NSNull()
+    result["openingHeight"] = (value.openingHeight as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcDataStoreysItemPlanOpenings(_ value: VastuPlanImportIfcDataStoreysItemPlanOpenings) -> [String: Any] {
+    var result = value.raw
+    result["doors"] = (value.doors?.map(readVastuPlanImportIfcDataStoreysItemPlanOpeningsDoorsItem) as Any?) ?? NSNull()
+    result["windows"] = (value.windows?.map(readVastuPlanImportIfcDataStoreysItemPlanOpeningsWindowsItem) as Any?) ?? NSNull()
+    result["units"] = (value.units as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcDataStoreysItemPlan(_ value: VastuPlanImportIfcDataStoreysItemPlan) -> [String: Any] {
+    var result = value.raw
+    result["plot"] = (readVastuPlanImportIfcDataStoreysItemPlanPlot(value.plot) as Any?) ?? NSNull()
+    result["rooms"] = (value.rooms.map(readVastuPlanImportIfcDataStoreysItemPlanRoomsItem) as Any?) ?? NSNull()
+    result["openings"] = (value.openings.map(readVastuPlanImportIfcDataStoreysItemPlanOpenings) as Any?) ?? NSNull()
+    result["trueNorthDeg"] = (value.trueNorthDeg as Any?) ?? NSNull()
+    result["orientationDeg"] = (value.orientationDeg as Any?) ?? NSNull()
+    result["units"] = (value.units as Any?) ?? NSNull()
+    result["cadMetadata"] = (value.cadMetadata as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcDataStoreysItem(_ value: VastuPlanImportIfcDataStoreysItem) -> [String: Any] {
+    var result = value.raw
+    result["id"] = (value.id as Any?) ?? NSNull()
+    result["name"] = (value.name as Any?) ?? NSNull()
+    result["buildingId"] = (value.buildingId as Any?) ?? NSNull()
+    result["elevationMetres"] = (value.elevationMetres as Any?) ?? NSNull()
+    result["plan"] = (readVastuPlanImportIfcDataStoreysItemPlan(value.plan) as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcDataMappingReportItem(_ value: VastuPlanImportIfcDataMappingReportItem) -> [String: Any] {
+    var result = value.raw
+    result["entityId"] = (value.entityId as Any?) ?? NSNull()
+    result["handle"] = (value.handle as Any?) ?? NSNull()
+    result["stepId"] = (value.stepId as Any?) ?? NSNull()
+    result["entityType"] = (value.entityType as Any?) ?? NSNull()
+    result["layer"] = (value.layer as Any?) ?? NSNull()
+    result["role"] = (value.role as Any?) ?? NSNull()
+    result["status"] = (value.status as Any?) ?? NSNull()
+    result["planIds"] = (value.planIds as Any?) ?? NSNull()
+    result["reason"] = (value.reason as Any?) ?? NSNull()
+    result["storeyId"] = (value.storeyId as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcDataReviewReasonsItem(_ value: VastuPlanImportIfcDataReviewReasonsItem) -> [String: Any] {
+    var result = value.raw
+    result["id"] = (value.id as Any?) ?? NSNull()
+    result["reason"] = (value.reason as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanImportIfcData(_ value: VastuPlanImportIfcData) -> [String: Any] {
+    var result = value.raw
+    result["schema"] = (value.schema as Any?) ?? NSNull()
+    result["buildings"] = (value.buildings.map(readVastuPlanImportIfcDataBuildingsItem) as Any?) ?? NSNull()
+    result["storeys"] = (value.storeys.map(readVastuPlanImportIfcDataStoreysItem) as Any?) ?? NSNull()
+    result["trueNorthDeg"] = (value.trueNorthDeg as Any?) ?? NSNull()
+    result["mappingReport"] = (value.mappingReport.map(readVastuPlanImportIfcDataMappingReportItem) as Any?) ?? NSNull()
+    result["needsReview"] = (value.needsReview as Any?) ?? NSNull()
+    result["reviewReasons"] = (value.reviewReasons.map(readVastuPlanImportIfcDataReviewReasonsItem) as Any?) ?? NSNull()
+    result["pricing"] = (value.pricing as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuArCaptureMergeDataPairResidualsItem(_ value: VastuArCaptureMergeDataPairResidualsItem) -> [String: Any] {
+    [
+        "controlCount": (value.controlCount as Any?) ?? NSNull(),
+        "rmsResidualM": (value.rmsResidualM as Any?) ?? NSNull(),
+        "maxResidualM": (value.maxResidualM as Any?) ?? NSNull(),
+        "fromCaptureId": (value.fromCaptureId as Any?) ?? NSNull(),
+        "toCaptureId": (value.toCaptureId as Any?) ?? NSNull(),
+    ]
+}
+
+private func readVastuArCaptureMergeDataPricing(_ value: VastuArCaptureMergeDataPricing) -> [String: Any] {
+    [
+        "attributableCostUsd": (value.attributableCostUsd as Any?) ?? NSNull(),
+        "markupMultiplier": (value.markupMultiplier as Any?) ?? NSNull(),
+        "computedPriceUsd": (value.computedPriceUsd as Any?) ?? NSNull(),
+        "settledChargeUsd": (value.settledChargeUsd as Any?) ?? NSNull(),
+        "settlement": (value.settlement as Any?) ?? NSNull(),
+    ]
+}
+
+private func readVastuPlotFromSurveyDataPricing(_ value: VastuPlotFromSurveyDataPricing) -> [String: Any] {
+    [
+        "attributableCostUsd": (value.attributableCostUsd as Any?) ?? NSNull(),
+        "markupMultiplier": (value.markupMultiplier as Any?) ?? NSNull(),
+        "computedPriceUsd": (value.computedPriceUsd as Any?) ?? NSNull(),
+        "settledChargeUsd": (value.settledChargeUsd as Any?) ?? NSNull(),
+        "settlement": (value.settlement as Any?) ?? NSNull(),
+    ]
+}
+
+private func readVastuArCaptureMergeData(_ value: VastuArCaptureMergeData) -> [String: Any] {
+    [
+        "method": (value.method as Any?) ?? NSNull(),
+        "frame": (value.frame as Any?) ?? NSNull(),
+        "rooms": (value.rooms as Any?) ?? NSNull(),
+        "outlines": (value.outlines as Any?) ?? NSNull(),
+        "registrations": (value.registrations as Any?) ?? NSNull(),
+        "pairResiduals": (value.pairResiduals.map(readVastuArCaptureMergeDataPairResidualsItem) as Any?) ?? NSNull(),
+        "unresolvedAlignmentErrors": (value.unresolvedAlignmentErrors as Any?) ?? NSNull(),
+        "floorStack": (value.floorStack as Any?) ?? NSNull(),
+        "toleranceM": (value.toleranceM as Any?) ?? NSNull(),
+        "alignmentMethod": (value.alignmentMethod as Any?) ?? NSNull(),
+        "pricing": (value.pricing.map(readVastuArCaptureMergeDataPricing) as Any?) ?? NSNull(),
+    ]
+}
+
+private func readVastuPlotFromSurveyData(_ value: VastuPlotFromSurveyData) -> [String: Any] {
+    [
+        "method": (value.method as Any?) ?? NSNull(),
+        "sourceCrs": (value.sourceCrs as Any?) ?? NSNull(),
+        "sourceUnits": (value.sourceUnits as Any?) ?? NSNull(),
+        "coordinateOrder": (value.coordinateOrder as Any?) ?? NSNull(),
+        "frame": (value.frame as Any?) ?? NSNull(),
+        "plotPolygon": (value.plotPolygon as Any?) ?? NSNull(),
+        "controlPoints": (value.controlPoints as Any?) ?? NSNull(),
+        "areaM2": (value.areaM2 as Any?) ?? NSNull(),
+        "gridConvergenceDeg": (value.gridConvergenceDeg as Any?) ?? NSNull(),
+        "boundaryGridConvergenceDeg": (value.boundaryGridConvergenceDeg as Any?) ?? NSNull(),
+        "trueNorthGridBearingDeg": (value.trueNorthGridBearingDeg as Any?) ?? NSNull(),
+        "maxDistanceFromOriginM": (value.maxDistanceFromOriginM as Any?) ?? NSNull(),
+        "pricing": (value.pricing.map(readVastuPlotFromSurveyDataPricing) as Any?) ?? NSNull(),
+    ]
+}
+
+private func readVastuPlanExportIfcData(_ value: VastuPlanExportIfcData) -> [String: Any] {
+    var result = value.raw
+    result["ifc"] = (value.ifc as Any?) ?? NSNull()
+    result["schema"] = (value.schema as Any?) ?? NSNull()
+    result["contentType"] = (value.contentType as Any?) ?? NSNull()
+    result["fileName"] = (value.fileName as Any?) ?? NSNull()
+    result["outputUnits"] = (value.outputUnits as Any?) ?? NSNull()
+    result["units"] = (value.units as Any?) ?? NSNull()
+    result["roomCount"] = (value.roomCount as Any?) ?? NSNull()
+    result["pricing"] = (value.pricing as Any?) ?? NSNull()
+    result["inputUnits"] = (value.inputUnits as Any?) ?? NSNull()
+    result["metresPerInputUnit"] = (value.metresPerInputUnit as Any?) ?? NSNull()
+    return result
+}
+
+private func readVastuPlanConvertUnitsData(_ value: VastuPlanConvertUnitsData) -> [String: Any] {
+    var result = value.raw
+    result["plan"] = (value.plan as Any?) ?? NSNull()
+    result["inputUnits"] = (value.inputUnits as Any?) ?? NSNull()
+    result["outputUnits"] = (value.outputUnits as Any?) ?? NSNull()
+    result["scaleFactor"] = (value.scaleFactor as Any?) ?? NSNull()
+    result["canonicalUnits"] = (value.canonicalUnits as Any?) ?? NSNull()
+    result["pricing"] = (value.pricing as Any?) ?? NSNull()
+    result["units"] = (value.units as Any?) ?? NSNull()
+    result["metresPerInputUnit"] = (value.metresPerInputUnit as Any?) ?? NSNull()
+    return result
 }
