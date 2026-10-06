@@ -32,6 +32,10 @@ public class VedikaApiError: Error, CustomStringConvertible {
         self.body = body
     }
 
+    /// Machine-readable error `code` from the response body, for example
+    /// `INSUFFICIENT_BALANCE` or `DAILY_LIMIT_EXCEEDED`, when the API sent one.
+    public var code: String? { body?["code"] as? String }
+
     public var description: String {
         "VedikaApiError(\(statusCode.map(String.init) ?? "nil")): \(message)"
     }
@@ -45,20 +49,67 @@ public final class VedikaAuthError: VedikaApiError {
 }
 
 /// Thrown when the wallet balance is insufficient (HTTP 402).
+///
+/// A 402 is never retried: the call was refused before any charge. Add funds
+/// (see `purchaseUrl`) and call again.
 public final class VedikaInsufficientCredits: VedikaApiError {
     public init(_ message: String, body: [String: Any]? = nil) {
         super.init(message, statusCode: 402, body: body)
     }
+
+    private func walletValue(_ key: String) -> Double? {
+        let raw = (body?["wallet"] as? [String: Any])?[key] ?? body?[key]
+        if let number = raw as? NSNumber { return number.doubleValue }
+        if let text = raw as? String { return Double(text) }
+        return nil
+    }
+
+    /// Amount this call needed, in USD (`wallet.required`).
+    public var required: Double? { walletValue("required") }
+
+    /// Wallet balance at the time of the call, in USD (`wallet.available`).
+    public var available: Double? { walletValue("available") }
+
+    /// How much more is needed, in USD (`wallet.deficit`).
+    public var deficit: Double? { walletValue("deficit") }
+
+    /// Where to add funds, when the API sent one.
+    public var purchaseUrl: String? { body?["purchaseUrl"] as? String }
 }
 
-/// Thrown when the rate limit is exceeded (HTTP 429).
+/// Thrown when a request is refused with HTTP 429.
+///
+/// A 429 has several causes, so decide from `code`, never from the rate-limit
+/// response headers: they describe the per-minute limiter, which may not be
+/// the one that refused the call.
 public final class VedikaRateLimitError: VedikaApiError {
-    /// Seconds until the rate limit resets, parsed from the `Retry-After` header.
+    /// Seconds to wait, from the body's `retryAfter`, falling back to the
+    /// `Retry-After` header. Only meaningful when `isRetryable` is true.
     public let retryAfterSeconds: Int?
 
     public init(_ message: String, body: [String: Any]? = nil, retryAfterSeconds: Int? = nil) {
         self.retryAfterSeconds = retryAfterSeconds
         super.init(message, statusCode: 429, body: body)
+    }
+
+    /// True for `DAILY_LIMIT_EXCEEDED`: the daily allowance is spent and a
+    /// retry will keep failing until it resets or the plan is upgraded.
+    public var isDailyLimit: Bool { code == "DAILY_LIMIT_EXCEEDED" }
+
+    /// True when waiting `retryAfterSeconds` and calling again can succeed.
+    /// False for the daily and plan limits.
+    public var isRetryable: Bool { code != "DAILY_LIMIT_EXCEEDED" && code != "PLAN_LIMIT_EXCEEDED" }
+
+    /// Where to upgrade the plan, when the API sent one.
+    public var upgradeUrl: String? { body?["upgradeUrl"] as? String }
+}
+
+/// Thrown when a call carried an idempotency key that the endpoint does not
+/// accept (HTTP 422, `IDEMPOTENCY_NOT_SUPPORTED`) and the key was the caller's
+/// own. No charge was attempted. Call again without `idempotencyKey`.
+public final class VedikaIdempotencyNotSupportedError: VedikaApiError {
+    public init(_ message: String, body: [String: Any]? = nil) {
+        super.init(message, statusCode: 422, body: body)
     }
 }
 

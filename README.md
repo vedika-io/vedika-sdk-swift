@@ -10,7 +10,7 @@ resolve a package from a subdirectory of a larger repository.
 ## Install
 
 ```swift
-.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.3.0")
+.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.3.1")
 ```
 
 Then add `VedikaSDK` to your target's dependencies.
@@ -22,10 +22,25 @@ Platforms: iOS 15+, macOS 12+ (`URLSession.data(for:)` async needs that floor).
 ```swift
 import VedikaSDK
 
-let client = VedikaClient(config: VedikaConfig(apiKey: "vk_live_..."))
-let audit = try await client.vastu.auditSingleRoom(roomType: "kitchen", zone: "NE")
-print(audit.score ?? 0)
+let client = try VedikaClient(apiKey: "vk_live_...")  // server-side only, see Keys
+let audit = try await client.vastu.vastuOperation(
+    VastuContracts.auditSingleRoom,
+    request: VastuAuditSingleRoomRequest(roomType: "kitchen", zone: "NE"))
+print(audit.data.compliance, audit.data.remedy)
 ```
+
+## Errors
+
+All failures throw a `VedikaApiError` subclass. Branch on the type, not the text.
+
+- `VedikaInsufficientCredits` (402): `required`, `available`, `deficit` and `purchaseUrl`. Never retried.
+- `VedikaRateLimitError` (429): read `code`. `isDailyLimit` and non-`isRetryable` mean stop and wait; otherwise wait `retryAfterSeconds`.
+- `VedikaAuthError` (401): not retried.
+- `VedikaIdempotencyNotSupportedError` (422 `IDEMPOTENCY_NOT_SUPPORTED`): the route rejects idempotency keys and nothing was charged. Resend without the key.
+
+The client sends an `Idempotency-Key` automatically only on the Vastu routes that accept
+one. It never retries a billed POST that has no key on a server error or network failure.
+Pass your own `idempotencyKey:` on any call you want retried safely.
 
 ## iPhone room scanner (1.1.0)
 
@@ -39,7 +54,7 @@ are iOS-only and need a physical device with LiDAR for the RoomPlan path.
 Add `NSCameraUsageDescription` (and `NSLocationWhenInUseUsageDescription` for the true
 heading sample) to your app's Info.plist.
 
-## Ask about a report PDF (1.3.0)
+## Ask about a report PDF
 
 ```swift
 let upload = try await client.vastu.uploadVastuReport(pdfData, idempotencyKey: savedKey)
