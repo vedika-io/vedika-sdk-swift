@@ -154,7 +154,7 @@ public final class RoomPlanCaptureController: NSObject {
     /// Chain wall endpoints into a floor outline, and turn walls/doors/
     /// windows/openings into the one `RoomCaptureRoomInput` this iOS-16
     /// (single-room, no `StructureBuilder`) path produces.
-    static func toCaptureSession(
+    public static func toCaptureSession(
         _ room: CapturedRoom, captureId: String, startedAt: Date, headingSamples: [RoomCaptureHeadingSample],
         declinationDeg: Double?, declinationProvenance: String
     ) throws -> RoomCaptureSession {

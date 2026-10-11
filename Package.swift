@@ -16,7 +16,7 @@ import PackageDescription
 // `github.com/vedika-io/vedika-sdk-swift`, where it sits at the repository
 // root and is installable by URL:
 //
-//     .package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.3.0")
+//     .package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.3.1")
 //
 // A local path consumer still works: `.package(path: "../vedika/sdks/swift")`.
 // This directory remains the source of truth; the mirror is synced from it.
@@ -27,9 +27,13 @@ let package = Package(
         .macOS(.v12),
     ],
     products: [
-        .library(name: "VedikaSDK", targets: ["VedikaSDK"])
+        .library(name: "VedikaSDK", targets: ["VedikaSDK"]),
+        .library(name: "VedikaRoomCapture", targets: ["VedikaRoomCapture"])
     ],
     targets: [
+        .target(name: "VedikaRoomCapture", dependencies: ["VedikaSDK"]),
+        .testTarget(name: "VedikaRoomCaptureTests", dependencies: ["VedikaRoomCapture"],
+                    resources: [.process("Resources")]),
         .target(
             name: "VedikaSDK",
             resources: [.copy("Resources/VastuRuntime")]

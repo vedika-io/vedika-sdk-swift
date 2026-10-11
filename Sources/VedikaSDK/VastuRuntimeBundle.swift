@@ -1,6 +1,6 @@
 // Packaged offline AR runtime — integrity, as a CONSUMER of the package sees it.
 //
-// ## Why this is its own platform-free file (ar#20, 2026-09-18)
+// ## Why this is its own platform-free file (2026-09-18)
 // The digest check used to live inline in `VastuArView.verifyRuntime()`, which
 // is inside that file's `#if os(iOS)` guard. That made the integrity of the
 // bytes this package actually SHIPS untestable: `swift test` targets macOS, so

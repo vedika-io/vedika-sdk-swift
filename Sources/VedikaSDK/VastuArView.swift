@@ -172,7 +172,7 @@ public final class VastuArView: UIViewController {
     /// Called when a custom page fails to load. The default runtime is bundled.
     public var onLoadFailed: (() -> Void)?
 
-    /// b2c#23 / ar#20: rendered in place of the AR page on a main-frame
+    /// rendered in place of the AR page on a main-frame
     /// navigation failure (see the `WKNavigationDelegate` extension below) so
     /// a cold offline start shows an honest, first-party message instead of
     /// the platform's own blank/default error page. Deliberately plain
@@ -243,7 +243,7 @@ public final class VastuArView: UIViewController {
     ///
     /// The check itself lives in the platform-free `VastuRuntimeBundle` so the
     /// bytes this package ships are asserted by `swift test` on macOS as well
-    /// (ar#20) — inline here it was uncompiled outside iOS and therefore
+    /// inline here it was uncompiled outside iOS and therefore
     /// untested. Behaviour is unchanged: a corrupt offline runtime still stops
     /// the app rather than being displayed, and the thrown `Failure` now names
     /// which resource and which digest, instead of one opaque message.
@@ -432,7 +432,7 @@ extension VastuArView: WKNavigationDelegate {
         }
     }
 
-    /// Offline/navigation-failure fix (b2c#23 / ar#20). Covers a failure
+    /// Offline/navigation-failure fix . Covers a failure
     /// that happens BEFORE any content committed (typical of "no network at
     /// all" -- DNS/connection-refused/offline) -- `didFail` (below) covers a
     /// failure AFTER a response started arriving.
