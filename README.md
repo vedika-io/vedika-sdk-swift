@@ -10,10 +10,23 @@ resolve a package from a subdirectory of a larger repository.
 ## Install
 
 ```swift
-.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.3.0")
+.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.3.1")
 ```
 
-Then add `VedikaSDK` to your target's dependencies.
+Then add `VedikaSDK` to your target's dependencies. For the coached RoomPlan
+screen, encrypted offline capture queue and overlay relocalization gate, also add
+`.product(name: "VedikaRoomCapture", package: "vedika-sdk-swift")` and
+`import VedikaRoomCapture`.
+
+`RoomCaptureScanView` and `RoomCaptureScanModel` require iOS 16+ and RoomPlan.
+`CaptureOutbox`, `CaptureKeychain`, `CaptureSyncState`, `QueuedCapture`,
+`CaptureUploadAdapter`, `OverlayRelocalizationGate`, `CaptureLocalMetadata` and
+`LocalWorldMapReference` are in `VedikaRoomCapture`. `LocalWorldMapStore`,
+`LocalWorldMapStore.evaluate` and `RelocalizedOverlay` are iOS-only.
+`NativeAttestation`, `NativeAttestationChallenge` and `AttestationCanonicalJSON`
+provide challenge/body binding; `AppAttestCaptureProof` requires iOS DeviceCheck.
+Physical scanning, compass accuracy and map restoration still require device
+acceptance. Synthetic replay does not prove physical accuracy.
 
 Platforms: iOS 15+, macOS 12+ (`URLSession.data(for:)` async needs that floor).
 

@@ -16,7 +16,7 @@ import Foundation
 /// policy, `get`/`post` primitives, response handling) does not need to
 /// change to add one.
 public final class VedikaClient {
-    private static let sdkVersion = "vedika-swift/1.3.0"
+    private static let sdkVersion = "vedika-swift/1.3.1"
 
     /// Two extra attempts for network failures and 5xx responses. Either
     /// can follow a completed charge, so billed requests must retain their
@@ -159,7 +159,7 @@ public final class VedikaClient {
 
     /// Sends a POST request to the Vedika API.
     ///
-    /// - Parameter idempotencyKey: (b2c#32) every paid POST needs one so a
+    /// - Parameter idempotencyKey: every paid POST needs one so a
     ///   client-side retry after a LOST response (the request reached the
     ///   server and was billed, but the reply never made it back to the
     ///   phone) cannot create a duplicate charge — the server dedupes on

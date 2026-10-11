@@ -2,7 +2,7 @@ import XCTest
 import CryptoKit
 @testable import VedikaSDK
 
-/// The Swift half of ar#20: the packaged offline runtime is verified as an
+/// The Swift package: the packaged offline runtime is verified as an
 /// installed consumer sees it, and a stale or corrupted one is refused
 /// explicitly rather than silently rendered.
 ///
