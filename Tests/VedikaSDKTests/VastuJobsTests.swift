@@ -155,3 +155,20 @@ final class VastuJobsTests: XCTestCase {
         XCTAssertEqual(wires[1].path, "/v2/astrology/vastu/jobs/\(job)/results?cursor=c2")
     }
 }
+
+
+extension VastuJobsTests {
+    func testPlanOperationsAndTypedArtifactsPreservePortableContent() {
+        for operation in ["plan-analyze", "plan-report"] {
+            XCTAssertEqual(VastuJobsRequest(items: [], operation: operation).dictionary["operation"] as? String, operation)
+        }
+        let artifact: [String: Any] = ["artifactId": "a1", "jobId": "vjob_0123456789abcdef0123456789abcdef", "itemId": "unit/1", "contentType": "text/html", "filename": "report.html", "content": "<html>Report</html>"]
+        let item = VastuJobResultItem(raw: ["id": "unit/1", "index": 0, "status": 200, "response": [:], "artifacts": [artifact]])
+        XCTAssertEqual(item.artifacts.count, 1)
+        XCTAssertEqual(item.artifacts[0].itemId, "unit/1")
+        XCTAssertEqual(item.artifacts[0].filename, "report.html")
+        XCTAssertEqual(item.artifacts[0].content, "<html>Report</html>")
+        XCTAssertTrue(VastuJobResultItem(raw: ["artifacts": []]).artifacts.isEmpty)
+        XCTAssertTrue(VastuJobResultItem(raw: [:]).artifacts.isEmpty)
+    }
+}

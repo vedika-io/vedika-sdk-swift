@@ -47,8 +47,8 @@ final class CredentialRoutingTests: XCTestCase {
 
     func testTypedInventoryExposesEveryMountedLogicalOperationExactlyOnce() {
         let paths = VastuOperation.allCases.map(\.rawValue)
-        XCTAssertEqual(paths.count, 98)
-        XCTAssertEqual(Set(paths).count, 98)
+        XCTAssertEqual(paths.count, 147)
+        XCTAssertEqual(Set(paths).count, 147)
         XCTAssertEqual(VastuOperation.assessments.rawValue, "assessments")
         XCTAssertEqual(VastuOperation.arTrueNorthCalibrate.rawValue, "ar/true-north-calibrate")
     }
@@ -84,10 +84,9 @@ final class CredentialRoutingTests: XCTestCase {
         XCTAssertEqual(VastuContracts.arTrueNorthCalibrate.operation, .arTrueNorthCalibrate)
     }
 
-    // The 11 GET-only reference tables + the GET+POST dual, from the Rust
-    // router (VASTU_GET_REFERENCE_ROUTES + VASTU_DUAL_ROUTE in
-    // vedika-v2/src/vastu.rs) — identical list to the Android/Flutter SDK
-    // tests.
+    // The 11 GET-only reference tables + the GET+POST dual, from the server
+    // router (VASTU_GET_REFERENCE_ROUTES + VASTU_DUAL_ROUTE) — identical list
+    // to the Android/Flutter SDK tests.
     private let getOps = [
         "reference/directions/8",
         "reference/directions/16",

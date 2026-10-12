@@ -36,7 +36,7 @@ public enum RoomCaptureAvailability {
     public static func currentPath() -> Path {
         // Qualified `RoomPlan.RoomCaptureSession` — this module's own
         // `RoomCaptureSession` (the plain-value type in `RoomCaptureTypes.swift`,
-        // shared with the Kotlin/JS/Rust ports) shadows RoomPlan's class of
+        // shared with the Kotlin/JS/server ports) shadows RoomPlan's class of
         // the same name for unqualified lookups in this file.
         if #available(iOS 16.0, *), RoomPlan.RoomCaptureSession.isSupported {
             return .roomPlan
