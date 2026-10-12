@@ -8,7 +8,7 @@ import Foundation
 /// (plus the circular-bearing helpers it borrows from `heading-provider.js`).
 /// `RoomCaptureGeometryTests` runs the same shared fixtures
 /// (`sdks/fixtures/vastu-room-capture/*.json`) through this port and asserts
-/// the same expected capture, within 1e-6 — the Rust, JS, Kotlin and Swift
+/// the same expected capture, within 1e-6 — the server, JS, Kotlin and Swift
 /// implementations must never silently drift apart. Do not change rounding,
 /// ordering, or the sign convention here without re-checking those fixtures.
 ///

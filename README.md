@@ -10,7 +10,7 @@ resolve a package from a subdirectory of a larger repository.
 ## Install
 
 ```swift
-.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.3.1")
+.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.3.2")
 ```
 
 Then add `VedikaSDK` to your target's dependencies. For the coached RoomPlan
@@ -63,6 +63,24 @@ let answer = try await client.vastu.askVastuReport(
 
 Keep `savedKey` and reuse it on a retry: the upload is billed once per key.
 Follow-ups pass `conversationId` from the first answer.
+
+## Pin zones to the floor (1.3.2)
+
+`VedikaRoomCapture` adds `PinnedFloorOverlayRenderer`, which draws the returned
+Vastu zone boundaries on the floor of a live AR session. Freeze a
+`FloorPlanAnchorTransform` from the capture's `frame.planToWorld` (it already
+holds the one north correction) and the original floor anchor's
+`FloorAnchorPose`. Build `FloorOverlayPolygon` values from the zone boundaries
+the API returned. Then create the renderer on the main actor with the same
+session, the saved floor anchor ID and the map reference. Mount its `view` and
+keep the renderer alive.
+
+Each frame, the renderer moves the frozen geometry by the current floor anchor
+pose. It hides the overlay when frames are stale or duplicated, the anchor or
+landmarks are missing, the pose is invalid, tracking is lost or the map
+disagrees. It shows again only after three matching frames of current physical
+landmarks. Saved screen pixels are not observations. iOS only. Real-phone
+accuracy is not yet measured.
 
 ## Keys
 

@@ -1,26 +1,39 @@
 import Foundation
 
-/// One item to queue: a unique `id` (1-128 bytes, no surrounding spaces) and its assessment `input`.
+/// One item to queue: a unique `id` (1-128 bytes, no surrounding spaces) and its operation `input`.
 public struct VastuJobsRequestItem: VastuEncodable {
     public var id: String
-    public var input: VastuAssessmentsRequest
-    public init(id: String, input: VastuAssessmentsRequest) { self.id = id; self.input = input }
+    public var input: any VastuRequest
+    public init(id: String, input: any VastuRequest) { self.id = id; self.input = input }
     public var dictionary: [String: Any] { ["id": id, "input": input.dictionary] }
 }
 
-/// Queue 1 to 1,000 assessments (`POST /v2/astrology/vastu/jobs`). The submit
+/// Queue 1 to 1,000 assessments, plan analyses or reports (`POST /v2/astrology/vastu/jobs`). The submit
 /// needs a caller-retained idempotency key: the same key and body return the
 /// same job, a different body under the same key is refused with 409.
 public struct VastuJobsRequest: VastuRequest {
+    public var operation: String
     public var items: [VastuJobsRequestItem]
     /// An active webhook on this account that receives the job's final event.
     public var webhookId: String?
-    public init(items: [VastuJobsRequestItem], webhookId: String? = nil) { self.items = items; self.webhookId = webhookId }
+    public init(items: [VastuJobsRequestItem], webhookId: String? = nil, operation: String = "assessments") { self.items = items; self.webhookId = webhookId; self.operation = operation }
     public var dictionary: [String: Any] {
-        var result: [String: Any] = ["operation": "assessments", "items": items.map { $0.dictionary }]
+        var result: [String: Any] = ["operation": operation, "items": items.map { $0.dictionary }]
         if let webhookId { result["webhookId"] = webhookId }
         return result
     }
+}
+
+/// A completed item's portable artifact. Access is scoped to its job owner.
+public struct VastuJobArtifact {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var artifactId: String { (raw["artifactId"] as? String)! }
+    public var jobId: String { (raw["jobId"] as? String)! }
+    public var itemId: String { (raw["itemId"] as? String)! }
+    public var contentType: String { (raw["contentType"] as? String)! }
+    public var filename: String { (raw["filename"] as? String)! }
+    public var content: String { (raw["content"] as? String)! }
 }
 
 /// One finished item. `status` is the HTTP status the single-item call would have returned.
@@ -34,6 +47,9 @@ public struct VastuJobResultItem {
     public var code: String? { raw["code"] as? String }
     /// The exact single-item response envelope, including its billing block.
     public var response: [String: Any] { (raw["response"] as? [String: Any]) ?? [:] }
+    public var artifacts: [VastuJobArtifact] {
+        ((raw["artifacts"] as? [[String: Any]]) ?? []).map { VastuJobArtifact(raw: $0) }
+    }
 }
 
 private func vastuJobInt(_ value: Any?) -> Int? { (value as? NSNumber)?.intValue }
