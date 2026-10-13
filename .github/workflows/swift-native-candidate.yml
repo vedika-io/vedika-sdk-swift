@@ -1,0 +1,98 @@
+name: Swift native candidate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swift-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apple-tests:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      BASELINE_SHA: 053a64ddde0b4821568f2f9be4df799f7aa31cea
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Toolchain and simulator
+        run: |
+          swift --version
+          xcodebuild -version
+          xcodebuild -list -json
+          xcrun simctl list devices available --json > "$RUNNER_TEMP/devices.json"
+          python3 - <<'PY'
+          import json, os
+          devices = json.load(open(os.environ['RUNNER_TEMP'] + '/devices.json'))['devices']
+          phones = [(runtime, d) for runtime, rows in devices.items()
+                    if 'iOS' in runtime for d in rows
+                    if d.get('isAvailable') and d['name'].startswith('iPhone')]
+          if not phones:
+              raise SystemExit('No available iPhone simulator')
+          runtime, phone = sorted(phones, key=lambda pair: pair[0])[-1]
+          print(runtime, phone['name'], phone['udid'])
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write('SIMULATOR_ID=' + phone['udid'] + '\n')
+          PY
+      - name: Baseline package build and test
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/vedika-swift-baseline" "$BASELINE_SHA"
+          mkdir -p "$RUNNER_TEMP/swift-native-logs"
+          cd "$RUNNER_TEMP/vedika-swift-baseline"
+          swift build 2>&1 | tee "$RUNNER_TEMP/swift-native-logs/baseline-build.log"
+          swift test 2>&1 | tee "$RUNNER_TEMP/swift-native-logs/baseline-test.log"
+      - name: Candidate package build and test
+        run: |
+          swift build 2>&1 | tee "$RUNNER_TEMP/swift-native-logs/candidate-build.log"
+          swift test 2>&1 | tee "$RUNNER_TEMP/swift-native-logs/candidate-test.log"
+          swift package dump-package > "$RUNNER_TEMP/package.json"
+          python3 release/verify_va05_public_export.py --root . --dump-package "$RUNNER_TEMP/package.json"
+          python3 -m unittest discover -s release -p 'test_*.py' -v
+      - name: iOS simulator tests for both products
+        run: |
+          xcodebuild test -scheme VedikaSDK \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/swift-native-logs/ios-sdk.log"
+          xcodebuild test -scheme VedikaRoomCapture \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/swift-native-logs/ios-room-capture.log"
+      - name: New acceptance tests fail on the baseline
+        run: |
+          test -f Tests/VedikaRoomCaptureTests/CaptureSaveUploadTests.swift
+          test -f Tests/VedikaRoomCaptureTests/RemedyFloorOverlayTests.swift
+          cp Tests/VedikaRoomCaptureTests/CaptureSaveUploadTests.swift \
+             Tests/VedikaRoomCaptureTests/RemedyFloorOverlayTests.swift \
+             "$RUNNER_TEMP/vedika-swift-baseline/Tests/VedikaRoomCaptureTests/"
+          cp Tests/VedikaRoomCaptureTests/NativeLoopbackHTTPServer.swift \
+             "$RUNNER_TEMP/vedika-swift-baseline/Tests/VedikaRoomCaptureTests/"
+          cp Tests/VedikaRoomCaptureTests/Resources/native-1.4.0-contract.json \
+             "$RUNNER_TEMP/vedika-swift-baseline/Tests/VedikaRoomCaptureTests/Resources/"
+          cd "$RUNNER_TEMP/vedika-swift-baseline"
+          if swift test --filter 'CaptureSaveUploadTests|RemedyFloorOverlayTests' \
+              > "$RUNNER_TEMP/swift-native-logs/baseline-new-tests.log" 2>&1; then
+            echo 'New acceptance unexpectedly passed on the baseline'
+            exit 1
+          fi
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          log = (Path(os.environ['RUNNER_TEMP']) / 'swift-native-logs/baseline-new-tests.log').read_text()
+          expected = ['CaptureSaveOptions', 'RemedyFloorOverlay']
+          for name in expected:
+              if name not in log or 'error:' not in log:
+                  raise SystemExit('Missing expected baseline failure for ' + name)
+          print('Baseline rejects the new save and remedy APIs; candidate tests passed.')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swift-native-${{ github.sha }}
+          path: ${{ runner.temp }}/swift-native-logs

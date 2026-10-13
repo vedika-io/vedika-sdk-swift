@@ -190,6 +190,6 @@ final class ErrorHandlingTests: XCTestCase {
         server.enqueue(stub(200, #"{"success":true}"#))
         _ = try await client().vastu.vastuScore("overall", params: [:])
         let wire = try XCTUnwrap(server.requests().first)
-        XCTAssertEqual(header(wire, "X-SDK"), "vedika-swift/1.3.2")
+        XCTAssertEqual(header(wire, "X-SDK"), "vedika-swift/1.4.0")
     }
 }
