@@ -275,6 +275,7 @@ public final class PinnedFloorOverlayRenderer: @unchecked Sendable {
 
     /// Remedies share the zone polygons' floor anchor and per-frame refusal
     /// gates. Keep full advice/source text from remedies.placements in the UI.
+    @MainActor
     public convenience init(session: ARSession, anchorId: UUID, reference: LocalWorldMapReference,
                             sessionId: UUID, northRevision: UUID, transform: FloorPlanAnchorTransform,
                             remedies: RemedyFloorOverlay, polygons: [FloorOverlayPolygon] = []) throws {

@@ -49,6 +49,12 @@ jobs:
           with open(os.environ['GITHUB_ENV'], 'a') as f:
               f.write('SIMULATOR_ID=' + phone['udid'] + '\n')
           PY
+      - name: Candidate iOS compile
+        run: |
+          mkdir -p "$RUNNER_TEMP/swift-native-logs"
+          xcodebuild build -scheme VedikaRoomCapture \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/swift-native-logs/candidate-ios-build.log"
       - name: Baseline package build and test
         run: |
           git worktree add --detach "$RUNNER_TEMP/vedika-swift-baseline" "$BASELINE_SHA"

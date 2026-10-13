@@ -2,7 +2,7 @@
   "ask": "VA-05",
   "version": "1.4.0",
   "release_status": "candidate; tag and publication pending",
-  "source_sha": "e7a2050c834677942b4ada8db822660b54c67235",
+  "source_sha": "f4e04992dd0c0eb6b9ad1b8292d9cbaa2e467b38",
   "package_url": "https://github.com/vedika-io/vedika-sdk-swift.git",
   "public_branch": "ci/1.4.0-candidate",
   "product": "VedikaRoomCapture",
@@ -32,7 +32,7 @@
       ]
     },
     "Sources/VedikaRoomCapture/Relocalization.swift": {
-      "sha256": "378ec8d1f6c473558eaf5165e285993b41ab427adeb79002da8bbf6082cde152",
+      "sha256": "b5e0f22a91439f9f92888d0c95313755d81f6040af654ac75e745a7c0a2e7c21",
       "symbols": [
         "OverlayRelocalizationGate",
         "LocalWorldMapReference",
