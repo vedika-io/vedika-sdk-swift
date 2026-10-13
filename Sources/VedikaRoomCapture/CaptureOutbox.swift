@@ -10,6 +10,10 @@ public struct QueuedCapture: Codable, Sendable, Equatable {
     public let body: Data
     public let bodySHA256: String
     public let localMetadata: CaptureLocalMetadata?
+    public let saveAfterUpload: CaptureSaveOptions?
+    /// Missing in older queue files. A successful upload is checkpointed before
+    /// saving, so a save retry or restart never uploads and charges again.
+    public var uploadCompleted: Bool?
     public var state: CaptureSyncState
     public var attempts: Int
     public var nextAttemptAt: Date
@@ -63,7 +67,8 @@ public enum CaptureKeychain {
 public actor CaptureOutbox {
     private let file: URL
     private let key: SymmetricKey
-    private let aad = Data("vedika.capture-outbox/1".utf8)
+    private let aad = Data("vedika.capture-outbox/2".utf8)
+    private let legacyAAD = Data("vedika.capture-outbox/1".utf8)
     private var entries: [QueuedCapture]
     private var flushing = false
     private let maximumEntries: Int
@@ -72,7 +77,10 @@ public actor CaptureOutbox {
         self.file = file; self.key = key; self.maximumEntries = maximumEntries
         if FileManager.default.fileExists(atPath: file.path) {
             let box = try AES.GCM.SealedBox(combined: Data(contentsOf: file))
-            entries = try JSONDecoder().decode([QueuedCapture].self, from: AES.GCM.open(box, using: key, authenticating: aad))
+            let plaintext: Data
+            do { plaintext = try AES.GCM.open(box, using: key, authenticating: aad) }
+            catch { plaintext = try AES.GCM.open(box, using: key, authenticating: legacyAAD) }
+            entries = try JSONDecoder().decode([QueuedCapture].self, from: plaintext)
         } else { entries = [] }
     }
 
@@ -81,21 +89,29 @@ public actor CaptureOutbox {
     @discardableResult
     public func enqueue(body: Data, requestId: String = UUID().uuidString,
                         idempotencyKey: String = UUID().uuidString, localMetadata: CaptureLocalMetadata? = nil,
+                        saveAfterUpload: CaptureSaveOptions? = nil,
                         now: Date = Date()) throws -> QueuedCapture {
         guard body.count <= 256 * 1024, !requestId.isEmpty, !idempotencyKey.isEmpty,
-              let object = try? JSONSerialization.jsonObject(with: body), object is [String: Any] else {
+              let object = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any],
+              object["deviceAttestation"] == nil else {
             throw CaptureStoreError.invalidBody
         }
+        try saveAfterUpload?.validate()
         let hash = Self.hash(body)
         if let old = entries.first(where: { $0.requestId == requestId || $0.idempotencyKey == idempotencyKey }) {
-            guard old.requestId == requestId, old.idempotencyKey == idempotencyKey, old.body == body, old.localMetadata == localMetadata else {
+            guard old.requestId == requestId, old.idempotencyKey == idempotencyKey, old.body == body,
+                  old.localMetadata == localMetadata, old.saveAfterUpload == saveAfterUpload else {
                 throw CaptureStoreError.duplicateIdentity
             }
             return old
         }
+        if let saveAfterUpload, entries.contains(where: { $0.saveAfterUpload?.scanId == saveAfterUpload.scanId }) {
+            throw CaptureStoreError.duplicateIdentity
+        }
         guard entries.count < maximumEntries else { throw CaptureStoreError.capacity }
         let entry = QueuedCapture(requestId: requestId, idempotencyKey: idempotencyKey, body: body,
-            bodySHA256: hash, localMetadata: localMetadata, state: .unsynced, attempts: 0, nextAttemptAt: now, failure: nil)
+            bodySHA256: hash, localMetadata: localMetadata, saveAfterUpload: saveAfterUpload,
+            uploadCompleted: false, state: .unsynced, attempts: 0, nextAttemptAt: now, failure: nil)
         var candidate = entries; candidate.append(entry)
         try persist(candidate); entries = candidate
         return entry
@@ -104,35 +120,66 @@ public actor CaptureOutbox {
     /// A caller invokes this after connectivity changes or app launch. No
     /// recurring job is installed. Transport errors retain the durable record.
     public func flush(now: Date = Date(), isOnline: @Sendable () -> Bool,
+                      save: (@Sendable (QueuedCapture) async throws -> CaptureUploadResult)? = nil,
                       upload: @Sendable (QueuedCapture) async throws -> CaptureUploadResult) async throws {
         guard !flushing, isOnline() else { return }
         flushing = true; defer { flushing = false }
         let ids = entries.filter { $0.state == .unsynced && $0.nextAttemptAt <= now }.map(\.requestId)
         for id in ids {
             guard !Task.isCancelled, isOnline(), let index = entries.firstIndex(where: { $0.requestId == id }) else { break }
+            if entries[index].saveAfterUpload != nil, save == nil {
+                var updated = entries; updated[index].state = .failed
+                updated[index].failure = "save-handler-required"
+                try persist(updated); entries = updated; continue
+            }
             var checkpoint = entries
             checkpoint[index].attempts += 1
             checkpoint[index].nextAttemptAt = now.addingTimeInterval(min(3600, 2 * pow(2, Double(checkpoint[index].attempts - 1))))
             try persist(checkpoint); entries = checkpoint
+            if entries[index].uploadCompleted != true {
+                let result: CaptureUploadResult
+                do { result = try await upload(entries[index]) }
+                catch is CancellationError { throw CancellationError() }
+                catch { result = .retryable }
+                try apply(result, requestId: id, uploading: true)
+            }
+            // enqueue may run during either await; use the current snapshot.
+            guard !Task.isCancelled, isOnline(),
+                  let current = entries.firstIndex(where: { $0.requestId == id }),
+                  entries[current].state == .unsynced,
+                  entries[current].uploadCompleted == true,
+                  entries[current].saveAfterUpload != nil else { continue }
+            guard let save else {
+                var updated = entries; updated[current].state = .failed
+                updated[current].failure = "save-handler-required"
+                try persist(updated); entries = updated; continue
+            }
             let result: CaptureUploadResult
-            do { result = try await upload(entries[index]) }
+            do { result = try await save(entries[current]) }
             catch is CancellationError { throw CancellationError() }
             catch { result = .retryable }
-            // enqueue may run during the await; use the current snapshot.
-            guard let current = entries.firstIndex(where: { $0.requestId == id }) else { continue }
-            var updated = entries
-            switch result {
-            case .accepted: updated[current].state = .synced
-            case let .duplicate(requestId, bodySHA256):
-                if requestId == id && bodySHA256 == updated[current].bodySHA256 { updated[current].state = .synced }
-                else { updated[current].state = .failed; updated[current].failure = "identity-conflict" }
-            case .conflict: updated[current].state = .failed; updated[current].failure = "identity-conflict"
-            case .rejected: updated[current].state = .failed; updated[current].failure = "server-rejected"
-            case .retryable:
-                if updated[current].attempts >= 8 { updated[current].state = .failed; updated[current].failure = "retry-limit" }
-            }
-            try persist(updated); entries = updated
+            try apply(result, requestId: id, uploading: false)
         }
+    }
+
+    private func apply(_ result: CaptureUploadResult, requestId: String, uploading: Bool) throws {
+        guard let current = entries.firstIndex(where: { $0.requestId == requestId }) else { return }
+        var updated = entries
+        func accepted() {
+            if uploading { updated[current].uploadCompleted = true }
+            if !uploading || updated[current].saveAfterUpload == nil { updated[current].state = .synced }
+        }
+        switch result {
+        case .accepted: accepted()
+        case let .duplicate(id, hash):
+            if id == requestId && hash == updated[current].bodySHA256 { accepted() }
+            else { updated[current].state = .failed; updated[current].failure = "identity-conflict" }
+        case .conflict: updated[current].state = .failed; updated[current].failure = "identity-conflict"
+        case .rejected: updated[current].state = .failed; updated[current].failure = "server-rejected"
+        case .retryable:
+            if updated[current].attempts >= 8 { updated[current].state = .failed; updated[current].failure = "retry-limit" }
+        }
+        try persist(updated); entries = updated
     }
 
     /// Explicit user retry preserves the body and identity, including on a

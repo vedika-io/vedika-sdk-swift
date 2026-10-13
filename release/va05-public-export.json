@@ -1,0 +1,150 @@
+{
+  "ask": "VA-05",
+  "version": "1.4.0",
+  "release_status": "candidate; tag and publication pending",
+  "source_sha": "f4e04992dd0c0eb6b9ad1b8292d9cbaa2e467b38",
+  "package_url": "https://github.com/vedika-io/vedika-sdk-swift.git",
+  "public_branch": "ci/1.4.0-candidate",
+  "product": "VedikaRoomCapture",
+  "module": "VedikaRoomCapture",
+  "products": {
+    "VedikaSDK": "VedikaSDK",
+    "VedikaRoomCapture": "VedikaRoomCapture"
+  },
+  "sdk_version_header": "vedika-swift/1.4.0",
+  "files": {
+    "Sources/VedikaRoomCapture/RoomCaptureScanView.swift": {
+      "sha256": "5b93b0ffaf21108032e7407805af8a574c67f99c6671a6e0b82c72bc40c06c88",
+      "symbols": [
+        "RoomCaptureScanView",
+        "RoomCaptureScanModel"
+      ]
+    },
+    "Sources/VedikaRoomCapture/CaptureOutbox.swift": {
+      "sha256": "2ddf063c6d5d67ac710a13340ff41fd4145cabfc00ad1144b7afaa328643c0e8",
+      "symbols": [
+        "CaptureOutbox",
+        "CaptureKeychain",
+        "CaptureSyncState",
+        "QueuedCapture",
+        "CaptureUploadResult",
+        "CaptureStoreError"
+      ]
+    },
+    "Sources/VedikaRoomCapture/Relocalization.swift": {
+      "sha256": "b5e0f22a91439f9f92888d0c95313755d81f6040af654ac75e745a7c0a2e7c21",
+      "symbols": [
+        "OverlayRelocalizationGate",
+        "LocalWorldMapReference",
+        "CaptureLocalMetadata",
+        "LocalWorldMapStore",
+        "WorldMapError"
+      ]
+    },
+    "Sources/VedikaRoomCapture/CaptureUploadAdapter.swift": {
+      "sha256": "30ec69535ddebd10a33149b0c343c1a2dbbeac4ee87b203318a594b463a15cd3",
+      "symbols": [
+        "CaptureUploadAdapter"
+      ]
+    },
+    "Sources/VedikaRoomCapture/NativeAttestation.swift": {
+      "sha256": "9869d97f83d09d67bf35631197cd1df0d0710cf684b4531acc37b48f505725eb",
+      "symbols": [
+        "NativeAttestation",
+        "NativeAttestationChallenge",
+        "AttestationCanonicalJSON",
+        "AppAttestCaptureProof",
+        "NativeAttestationError"
+      ]
+    },
+    "Sources/VedikaRoomCapture/RoomPlanAdapter.swift": {
+      "sha256": "5414644e749482d02f4c9058daa5581d6fbad2bcc8a6ef8b876d0e714d80f55b",
+      "symbols": [
+        "RoomPlanAdapter",
+        "ConfirmedCaptureNorth",
+        "RelocalizedOverlay"
+      ]
+    },
+    "Package.swift": {
+      "sha256": "56a7aeadc93fd49bfdd9e16921a249fdb5d78fceef30710ec35efffad44111d3",
+      "symbols": []
+    },
+    "README.md": {
+      "sha256": "6bf8c1807a6b0620c3d249d95b40b44d1ee6b7735901148591ee1fd3931e76ff",
+      "symbols": []
+    },
+    "Sources/VedikaSDK/VedikaClient.swift": {
+      "sha256": "2f9634223b7071276fac445f56aad7c4478e4b5018b4734585bce1b857e72c19",
+      "symbols": [
+        "VedikaClient"
+      ]
+    },
+    "Sources/VedikaSDK/VastuService.swift": {
+      "sha256": "9a715c7345abcb05b83429c4f6c3be932e541f7ea908ec41631e27a9b1f9abe7",
+      "symbols": [
+        "VastuScansSaveRequest",
+        "VastuScansSaveData",
+        "VastuScanResponse"
+      ]
+    },
+    "Sources/VedikaSDK/RoomCapture/RoomCaptureUploader.swift": {
+      "sha256": "d109dd72b8276cef4a63117e9a48785ab8da6ba673415e149292cc6ff9af1b5e",
+      "symbols": [
+        "RoomCaptureUploader"
+      ]
+    },
+    "Sources/VedikaRoomCapture/CaptureSaveOptions.swift": {
+      "sha256": "631b12d1760571704b00e975d3c7c9bb082944130ca775efbcd7f96e33333cb6",
+      "symbols": [
+        "CaptureSaveOptions"
+      ]
+    },
+    "Sources/VedikaRoomCapture/RemedyFloorOverlay.swift": {
+      "sha256": "2b455ae43748c9384be45a4d0e6385d7d75efc722980ecefa106c258747cc4a0",
+      "symbols": [
+        "RemedyFloorOverlay",
+        "RemedyFloorPlacement"
+      ]
+    }
+  },
+  "apple_tests": [
+    "CaptureOutboxTests.testOfflineRestartBackoffAndReplayKeepIdentity",
+    "CaptureOutboxTests.testConflictAndDuplicateWithDifferentBodyStayFailed",
+    "CaptureOutboxTests.testIdentityCannotBeReusedForEditedCapture",
+    "CaptureOutboxTests.testTamperingOrWrongKeyNeverDropsQueue",
+    "CaptureOutboxTests.testEnqueueDuringUploadDoesNotLoseNewRecord",
+    "RelocalizationTests.testRefusesUntilAnchorsAndReprojectionMatchThenRevokesOnLoss",
+    "CaptureSaveUploadTests.testSaveFailureRestartAndReplayNeverUploadAgain",
+    "CaptureSaveUploadTests.testOptInSavesOriginalCaptureAfterUploadWithSeparateProofAndBodyIdentity",
+    "RemedyFloorOverlayTests.testLiveAndConcaveRemedyMarkersMatchThePublicWebGeometryOracle",
+    "RemedyFloorOverlayTests.testIOSRemedyRendererUsesFloorGeometryAndStartsHidden"
+  ],
+  "apple_test_files": [
+    "CaptureOutboxTests.swift",
+    "RelocalizationTests.swift",
+    "NativeAttestationTests.swift",
+    "CaptureSaveUploadTests.swift",
+    "RemedyFloorOverlayTests.swift",
+    "NativeLoopbackHTTPServer.swift"
+  ],
+  "test_resources": [
+    "native-1.4.0-contract.json"
+  ],
+  "physical_acceptance": "not measured",
+  "baseline": {
+    "source_sha": "54da60b7780188dedc153d3e24c455e388bfe6ec",
+    "public_revision": "053a64ddde0b4821568f2f9be4df799f7aa31cea",
+    "proof": "Package.swift, Sources and Tests byte-identical before this lane changed them"
+  },
+  "apple_ci": {
+    "status": "pending corrected simulator gate",
+    "superseded_run": "https://github.com/vedika-io/vedika-sdk-swift/actions/runs/38362126220",
+    "superseded_reason": "Product schemes had no test action; tee masked failures. macOS results valid, simulator proof invalid."
+  },
+  "previous_export": {
+    "version": "1.3.1",
+    "source_sha": "e18067d007ebf500904a3bbcc638c9936bf9b572",
+    "public_revision": "c702cc4c3d5a5bbf68675c6e5eb72238c4795939",
+    "public_archive_sha256": "43bea96034d01453a46a6b69cc52857836559b69cc9dfe5916a81b4d3e79f996"
+  }
+}

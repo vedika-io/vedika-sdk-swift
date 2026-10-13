@@ -9,8 +9,10 @@ resolve a package from a subdirectory of a larger repository.
 
 ## Install
 
+Version 1.4.0 is a release candidate; its tag and release are pending. For candidate testing, replace the version requirement below with `branch: "ci/1.4.0-candidate"`.
+
 ```swift
-.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.3.2")
+.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.4.0")
 ```
 
 Then add `VedikaSDK` to your target's dependencies. For the coached RoomPlan
@@ -35,7 +37,7 @@ Platforms: iOS 15+, macOS 12+ (`URLSession.data(for:)` async needs that floor).
 ```swift
 import VedikaSDK
 
-let client = VedikaClient(config: VedikaConfig(apiKey: "vk_live_..."))
+let client = try VedikaClient(apiKey: "vk_live_...")
 let audit = try await client.vastu.auditSingleRoom(roomType: "kitchen", zone: "NE")
 print(audit.score ?? 0)
 ```
@@ -81,6 +83,67 @@ landmarks are missing, the pose is invalid, tracking is lost or the map
 disagrees. It shows again only after three matching frames of current physical
 landmarks. Saved screen pixels are not observations. iOS only. Real-phone
 accuracy is not yet measured.
+
+## Save scans and pin remedies (1.4.0)
+
+The existing typed `VastuScansSaveRequest`, `VastuScanResponse<VastuScansSaveData>`
+and `RoomCaptureUploader.saveCapture` follow the account-save contract. A save
+uses a retained `scanId` and identical content as its retry identity. The API
+rejects `Idempotency-Key` headers on scan routes. Account saves are billed;
+`data.persistence == "account-store"` confirms storage. `"preview-only"` is a
+synthetic sandbox response and stores nothing.
+
+Opt into saving an offline capture when enqueueing it:
+
+```swift
+let save = try CaptureSaveOptions(
+    scanId: retainedScanId, propertyId: propertyId,
+    title: "Living room", retentionDays: 7)
+let body = try JSONSerialization.data(
+    withJSONObject: VastuArRoomCaptureRequest(capture: capture).dictionary)
+try await outbox.enqueue(body: body, idempotencyKey: retainedUploadKey,
+                         saveAfterUpload: save)
+try await CaptureUploadAdapter.flush(outbox, service: client.vastu,
+                                    isOnline: { connectivityAvailable })
+```
+
+The encrypted queue freezes the save settings with the upload body. It checkpoints
+upload success before saving; a save failure, cancellation or app restart retries
+only the save with the same `scanId`. A conflict stays failed. Editing the capture
+or save settings requires a new queue identity and a new scan ID. Never reuse a
+scan ID for another capture, including after storage expires. `synced` means both operations
+succeeded for an opted-in entry. Keep one owner per outbox file.
+
+
+New outbox snapshots use an authenticated version-two format. Version 1.4.0 reads
+older version-one queues; older SDKs refuse newer files. Keep queue files and keys
+when upgrading. Finish a new queue before downgrading the app, or reopen it with
+version 1.4.0 or later.
+
+For registered apps, pass separate `prepareProof` and `prepareSaveProof` callbacks
+to `CaptureUploadAdapter.flush`. Bind their unchanged bodies through
+`NativeAttestation.digest` or `AppAttestCaptureProof.proof` using operation
+`"ar/room-capture"` and `"scans/save"`, respectively. Fetch a fresh challenge for
+each operation/attempt. Short-lived proofs are excluded from the durable file.
+`CaptureSaveOptions.request(capture:)` also builds the existing typed save request.
+
+To place returned remedies, build `RemedyFloorOverlay(capture:response:catalog:)`
+from the original capture and its upload response. The adapter uses `rooms`,
+`audit.defects`, `planAnalysis.defects`, `anchorRecommendations.anchors` and
+optional remedy catalogs, matching the public floor scene. It preserves full
+advice and its separate remedy source in `placements`; a missing remedy source
+is explicitly reported. It creates no new advice or north correction. Concave
+room markers remain inside the scanned polygon. Voids and multiple levels require
+separate supported floor geometry.
+
+On iOS 16+, pass `remedies:` to `PinnedFloorOverlayRenderer` with the existing
+`FloorPlanAnchorTransform`, original `FloorAnchorPose`, saved floor anchor ID,
+map reference, session ID and north revision. Optional zone polygons share that
+same renderer. The renderer's per-frame relocalization, stale-frame and tracking
+loss gates hide both zones and remedies when uncertain. Display full advice and
+`sourceLabel` from `placements` alongside the numbered floor markers.
+Geometry tests run on macOS; the ARKit renderer runs only on iOS.
+Real-phone accuracy is not yet measured.
 
 ## Keys
 

@@ -272,6 +272,17 @@ public final class PinnedFloorOverlayRenderer: @unchecked Sendable {
     private let sessionId: UUID
     private let northRevision: UUID
     private let delegateProxy = FloorOverlaySceneDelegate()
+
+    /// Remedies share the zone polygons' floor anchor and per-frame refusal
+    /// gates. Keep full advice/source text from remedies.placements in the UI.
+    @MainActor
+    public convenience init(session: ARSession, anchorId: UUID, reference: LocalWorldMapReference,
+                            sessionId: UUID, northRevision: UUID, transform: FloorPlanAnchorTransform,
+                            remedies: RemedyFloorOverlay, polygons: [FloorOverlayPolygon] = []) throws {
+        try self.init(session: session, sessionId: sessionId, northRevision: northRevision,
+            reference: reference, anchorId: anchorId, transform: transform,
+            polygons: polygons + remedies.polygons)
+    }
     /// Fresh physical-marker observations in the CURRENT view viewport. A
     /// timestamp is mandatory; cached saved marker pixels never establish reuse.
     private var markerProvider: (() -> (timestamp: TimeInterval, points: [UUID: CGPoint]))?

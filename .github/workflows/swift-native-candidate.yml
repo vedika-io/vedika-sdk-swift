@@ -1,0 +1,153 @@
+name: Swift native candidate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: swift-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apple-tests:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      BASELINE_SHA: 053a64ddde0b4821568f2f9be4df799f7aa31cea
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Toolchain and simulator
+        run: |
+          swift --version
+          xcodebuild -version
+          xcodebuild -list -json
+          if (exit 42) | tee "$RUNNER_TEMP/pipeline-failure-control.log"; then
+            echo 'Pipeline failure did not propagate'
+            exit 1
+          fi
+          echo 'Pipeline failure propagation verified'
+          xcrun simctl list devices available --json > "$RUNNER_TEMP/devices.json"
+          python3 - <<'PY'
+          import json, os
+          devices = json.load(open(os.environ['RUNNER_TEMP'] + '/devices.json'))['devices']
+          phones = [(runtime, d) for runtime, rows in devices.items()
+                    if 'iOS' in runtime for d in rows
+                    if d.get('isAvailable') and d['name'].startswith('iPhone')]
+          if not phones:
+              raise SystemExit('No available iPhone simulator')
+          runtime, phone = sorted(phones, key=lambda pair: pair[0])[-1]
+          print(runtime, phone['name'], phone['udid'])
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write('SIMULATOR_ID=' + phone['udid'] + '\n')
+          PY
+      - name: Candidate iOS compile
+        run: |
+          mkdir -p "$RUNNER_TEMP/swift-native-logs"
+          xcodebuild build -scheme VedikaRoomCapture \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/swift-native-logs/candidate-ios-build.log"
+      - name: Baseline package build and test
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/vedika-swift-baseline" "$BASELINE_SHA"
+          mkdir -p "$RUNNER_TEMP/swift-native-logs"
+          cd "$RUNNER_TEMP/vedika-swift-baseline"
+          swift build 2>&1 | tee "$RUNNER_TEMP/swift-native-logs/baseline-build.log"
+          swift test 2>&1 | tee "$RUNNER_TEMP/swift-native-logs/baseline-test.log"
+          xcodebuild test -scheme VedikaSDK-Package \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/swift-native-logs/baseline-ios.log"
+      - name: Candidate package build and test
+        run: |
+          swift build 2>&1 | tee "$RUNNER_TEMP/swift-native-logs/candidate-build.log"
+          swift test 2>&1 | tee "$RUNNER_TEMP/swift-native-logs/candidate-test.log"
+          swift package dump-package > "$RUNNER_TEMP/package.json"
+          python3 release/verify_va05_public_export.py --root . --dump-package "$RUNNER_TEMP/package.json"
+          python3 -m unittest discover -s release -p 'test_*.py' -v
+      - name: iOS simulator tests for both products
+        run: |
+          xcodebuild test -scheme VedikaSDK-Package \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/swift-native-logs/candidate-ios.log"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          logs = Path(os.environ['RUNNER_TEMP']) / 'swift-native-logs'
+          for name in ['baseline-ios.log', 'candidate-ios.log']:
+              log = (logs / name).read_text()
+              if '** TEST SUCCEEDED **' not in log or 'Executed ' not in log:
+                  raise SystemExit('No successful XCTest execution: ' + name)
+          candidate = (logs / 'candidate-ios.log').read_text()
+          for name in ['CaptureSaveUploadTests', 'testIOSRemedyRendererUsesFloorGeometryAndStartsHidden']:
+              if name not in candidate:
+                  raise SystemExit('Missing native iOS test: ' + name)
+          print('Both products executed simulator tests, including the native renderer.')
+          PY
+      - name: New acceptance tests fail on the baseline
+        run: |
+          test -f Tests/VedikaRoomCaptureTests/CaptureSaveUploadTests.swift
+          test -f Tests/VedikaRoomCaptureTests/RemedyFloorOverlayTests.swift
+          cp Tests/VedikaRoomCaptureTests/CaptureSaveUploadTests.swift \
+             Tests/VedikaRoomCaptureTests/RemedyFloorOverlayTests.swift \
+             "$RUNNER_TEMP/vedika-swift-baseline/Tests/VedikaRoomCaptureTests/"
+          cp Tests/VedikaRoomCaptureTests/NativeLoopbackHTTPServer.swift \
+             "$RUNNER_TEMP/vedika-swift-baseline/Tests/VedikaRoomCaptureTests/"
+          cp Tests/VedikaRoomCaptureTests/Resources/native-1.4.0-contract.json \
+             "$RUNNER_TEMP/vedika-swift-baseline/Tests/VedikaRoomCaptureTests/Resources/"
+          cd "$RUNNER_TEMP/vedika-swift-baseline"
+          if swift test --filter 'CaptureSaveUploadTests|RemedyFloorOverlayTests' \
+              > "$RUNNER_TEMP/swift-native-logs/baseline-new-tests.log" 2>&1; then
+            echo 'New acceptance unexpectedly passed on the baseline'
+            exit 1
+          fi
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          log = (Path(os.environ['RUNNER_TEMP']) / 'swift-native-logs/baseline-new-tests.log').read_text()
+          expected = ['CaptureSaveOptions', 'RemedyFloorOverlay']
+          for name in expected:
+              if not re.search(r"error: cannot find (?:type )?'" + name + r"' in scope", log):
+                  raise SystemExit('Missing expected baseline failure for ' + name)
+          print('Baseline rejects the new save and remedy APIs; candidate tests passed.')
+          PY
+      - name: Older-reader refusal catches a version-one write fault
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/vedika-swift-fault" HEAD
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          source = Path(os.environ['RUNNER_TEMP']) / 'vedika-swift-fault/Sources/VedikaRoomCapture/CaptureOutbox.swift'
+          text = source.read_text()
+          old = 'private let aad = Data("vedika.capture-outbox/2".utf8)'
+          assert text.count(old) == 1
+          source.write_text(text.replace(old, 'private let aad = Data("vedika.capture-outbox/1".utf8)', 1))
+          PY
+          cd "$RUNNER_TEMP/vedika-swift-fault"
+          if swift test --filter CaptureSaveUploadTests.testLegacyReaderCannotOpenNewSaveQueue \
+              > "$RUNNER_TEMP/swift-native-logs/legacy-reader-fault.log" 2>&1; then
+            echo 'Older-reader refusal unexpectedly passed with version-one writes'
+            exit 1
+          fi
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          log = (Path(os.environ['RUNNER_TEMP']) / 'swift-native-logs/legacy-reader-fault.log').read_text()
+          if 'testLegacyReaderCannotOpenNewSaveQueue' not in log or 'XCTAssertThrowsError failed' not in log:
+              raise SystemExit('Fault control did not reach the older-reader refusal assertion')
+          print('Version-one write fault is rejected by the regression.')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swift-native-${{ github.sha }}
+          path: ${{ runner.temp }}/swift-native-logs
