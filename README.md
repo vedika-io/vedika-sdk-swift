@@ -110,8 +110,15 @@ try await CaptureUploadAdapter.flush(outbox, service: client.vastu,
 The encrypted queue freezes the save settings with the upload body. It checkpoints
 upload success before saving; a save failure, cancellation or app restart retries
 only the save with the same `scanId`. A conflict stays failed. Editing the capture
-or save settings requires a new queue identity. `synced` means both operations
+or save settings requires a new queue identity and a new scan ID. Never reuse a
+scan ID for another capture, including after storage expires. `synced` means both operations
 succeeded for an opted-in entry. Keep one owner per outbox file.
+
+
+New outbox snapshots use an authenticated version-two format. Version 1.4.0 reads
+older version-one queues; older SDKs refuse newer files. Keep queue files and keys
+when upgrading. Finish a new queue before downgrading the app, or reopen it with
+version 1.4.0 or later.
 
 For registered apps, pass separate `prepareProof` and `prepareSaveProof` callbacks
 to `CaptureUploadAdapter.flush`. Bind their unchanged bodies through

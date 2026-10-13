@@ -2,7 +2,7 @@
   "ask": "VA-05",
   "version": "1.4.0",
   "release_status": "candidate; tag and publication pending",
-  "source_sha": "b5773f5c34146e0afdce518113b64aadc0ec80f8",
+  "source_sha": "55d8eb862b0c234721848dacfcf890cca427502c",
   "package_url": "https://github.com/vedika-io/vedika-sdk-swift.git",
   "public_branch": "ci/1.4.0-candidate",
   "product": "VedikaRoomCapture",
@@ -21,7 +21,7 @@
       ]
     },
     "Sources/VedikaRoomCapture/CaptureOutbox.swift": {
-      "sha256": "32e9de208d9739873129aa4fc3aa3c6847c8d2a31482da2aca506b63002dfd3d",
+      "sha256": "2ddf063c6d5d67ac710a13340ff41fd4145cabfc00ad1144b7afaa328643c0e8",
       "symbols": [
         "CaptureOutbox",
         "CaptureKeychain",
@@ -70,7 +70,7 @@
       "symbols": []
     },
     "README.md": {
-      "sha256": "202cd43d75d35db2266052aed28212346672da591ad379a1a2e0276a4da193a6",
+      "sha256": "6bf8c1807a6b0620c3d249d95b40b44d1ee6b7735901148591ee1fd3931e76ff",
       "symbols": []
     },
     "Sources/VedikaSDK/VedikaClient.swift": {
@@ -132,12 +132,14 @@
   ],
   "physical_acceptance": "not measured",
   "baseline": {
-    "source_sha": "308f46238400c968c1b02e5d19ed95bc5895bb58",
+    "source_sha": "54da60b7780188dedc153d3e24c455e388bfe6ec",
     "public_revision": "053a64ddde0b4821568f2f9be4df799f7aa31cea",
     "proof": "Package.swift, Sources and Tests byte-identical before this lane changed them"
   },
   "apple_ci": {
-    "status": "pending"
+    "status": "pending corrected simulator gate",
+    "superseded_run": "https://github.com/vedika-io/vedika-sdk-swift/actions/runs/38362126220",
+    "superseded_reason": "Product schemes had no test action; tee masked failures. macOS results valid, simulator proof invalid."
   },
   "previous_export": {
     "version": "1.3.1",

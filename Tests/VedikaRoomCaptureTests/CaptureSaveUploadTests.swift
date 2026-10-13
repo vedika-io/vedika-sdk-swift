@@ -184,6 +184,43 @@ final class CaptureSaveUploadTests: XCTestCase {
         XCTAssertEqual(failed[0].failure, "save-handler-required")
     }
 
+    func testDifferentUploadsCannotReuseAnAccountSaveIdentity() async throws {
+        let (queue, _, _) = try outbox(), body = try uploadBody(), save = try options()
+        try await queue.enqueue(body: body, requestId: "one", idempotencyKey: "one", saveAfterUpload: save)
+        do {
+            try await queue.enqueue(body: body, requestId: "two", idempotencyKey: "two", saveAfterUpload: save)
+            XCTFail("another upload reused the scan ID")
+        } catch CaptureStoreError.duplicateIdentity {}
+        let kept = await queue.records(); XCTAssertEqual(kept.count, 1)
+    }
+
+    func testLegacyReaderCannotOpenNewSaveQueue() async throws {
+        let (queue, file, key) = try outbox()
+        try await queue.enqueue(body: uploadBody(), saveAfterUpload: options())
+        let box = try AES.GCM.SealedBox(combined: Data(contentsOf: file))
+        XCTAssertThrowsError(try AES.GCM.open(box, using: key, authenticating: Data("vedika.capture-outbox/1".utf8)))
+        let restarted = try CaptureOutbox(file: file, key: key), records = await restarted.records()
+        XCTAssertEqual(records[0].saveAfterUpload, try options())
+    }
+
+    func testVersionOneFileMigratesWithoutLosingCapture() async throws {
+        let (queue, file, key) = try outbox()
+        let record = try await queue.enqueue(body: uploadBody(), requestId: "old-upload", idempotencyKey: "old-key")
+        var old = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(record)) as? [String: Any])
+        old.removeValue(forKey: "saveAfterUpload"); old.removeValue(forKey: "uploadCompleted")
+        let plaintext = try JSONSerialization.data(withJSONObject: [old])
+        let legacy = try AES.GCM.seal(plaintext, using: key, authenticating: Data("vedika.capture-outbox/1".utf8))
+        try XCTUnwrap(legacy.combined).write(to: file)
+        let migrated = try CaptureOutbox(file: file, key: key), records = await migrated.records()
+        XCTAssertEqual(records[0].body, record.body); XCTAssertEqual(records[0].requestId, record.requestId)
+        XCTAssertEqual(records[0].idempotencyKey, record.idempotencyKey)
+        try await migrated.flush(isOnline: { true }) { _ in .accepted }
+        let newBox = try AES.GCM.SealedBox(combined: Data(contentsOf: file))
+        XCTAssertThrowsError(try AES.GCM.open(newBox, using: key, authenticating: Data("vedika.capture-outbox/1".utf8)))
+        let reopened = try CaptureOutbox(file: file, key: key), done = await reopened.records()
+        XCTAssertEqual(done[0].body, record.body); XCTAssertEqual(done[0].state, .synced)
+    }
+
     func testCancellationAfterUploadPreservesCheckpointForSaveOnlyRetry() async throws {
         let (queue, file, key) = try outbox()
         try await queue.enqueue(body: uploadBody(), saveAfterUpload: options())
@@ -209,5 +246,16 @@ final class CaptureSaveUploadTests: XCTestCase {
         for days in [0, 31] {
             XCTAssertThrowsError(try CaptureSaveOptions(scanId: scanId, propertyId: propertyId, title: "Room", retentionDays: days))
         }
+    }
+
+    func testShortLivedProofCannotEnterTheDurableQueue() async throws {
+        let (queue, _, _) = try outbox()
+        var body = try XCTUnwrap(JSONSerialization.jsonObject(with: uploadBody()) as? [String: Any])
+        body["deviceAttestation"] = ["assertion": "short-lived-synthetic-proof"]
+        do {
+            try await queue.enqueue(body: JSONSerialization.data(withJSONObject: body))
+            XCTFail("short-lived proof persisted")
+        } catch CaptureStoreError.invalidBody {}
+        let records = await queue.records(); XCTAssertTrue(records.isEmpty)
     }
 }

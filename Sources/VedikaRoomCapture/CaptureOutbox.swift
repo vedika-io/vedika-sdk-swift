@@ -67,7 +67,8 @@ public enum CaptureKeychain {
 public actor CaptureOutbox {
     private let file: URL
     private let key: SymmetricKey
-    private let aad = Data("vedika.capture-outbox/1".utf8)
+    private let aad = Data("vedika.capture-outbox/2".utf8)
+    private let legacyAAD = Data("vedika.capture-outbox/1".utf8)
     private var entries: [QueuedCapture]
     private var flushing = false
     private let maximumEntries: Int
@@ -76,7 +77,10 @@ public actor CaptureOutbox {
         self.file = file; self.key = key; self.maximumEntries = maximumEntries
         if FileManager.default.fileExists(atPath: file.path) {
             let box = try AES.GCM.SealedBox(combined: Data(contentsOf: file))
-            entries = try JSONDecoder().decode([QueuedCapture].self, from: AES.GCM.open(box, using: key, authenticating: aad))
+            let plaintext: Data
+            do { plaintext = try AES.GCM.open(box, using: key, authenticating: aad) }
+            catch { plaintext = try AES.GCM.open(box, using: key, authenticating: legacyAAD) }
+            entries = try JSONDecoder().decode([QueuedCapture].self, from: plaintext)
         } else { entries = [] }
     }
 
@@ -88,7 +92,8 @@ public actor CaptureOutbox {
                         saveAfterUpload: CaptureSaveOptions? = nil,
                         now: Date = Date()) throws -> QueuedCapture {
         guard body.count <= 256 * 1024, !requestId.isEmpty, !idempotencyKey.isEmpty,
-              let object = try? JSONSerialization.jsonObject(with: body), object is [String: Any] else {
+              let object = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any],
+              object["deviceAttestation"] == nil else {
             throw CaptureStoreError.invalidBody
         }
         try saveAfterUpload?.validate()
@@ -99,6 +104,9 @@ public actor CaptureOutbox {
                 throw CaptureStoreError.duplicateIdentity
             }
             return old
+        }
+        if let saveAfterUpload, entries.contains(where: { $0.saveAfterUpload?.scanId == saveAfterUpload.scanId }) {
+            throw CaptureStoreError.duplicateIdentity
         }
         guard entries.count < maximumEntries else { throw CaptureStoreError.capacity }
         let entry = QueuedCapture(requestId: requestId, idempotencyKey: idempotencyKey, body: body,
