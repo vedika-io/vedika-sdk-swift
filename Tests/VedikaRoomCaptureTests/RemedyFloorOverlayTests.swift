@@ -102,6 +102,19 @@ final class RemedyFloorOverlayTests: XCTestCase {
         XCTAssertEqual(marker.advice, "Synthetic advice")
     }
 
+    func testDirectAdviceCannotBorrowADifferentCatalogCitation() throws {
+        let row = try XCTUnwrap(try cases().first), capture = try XCTUnwrap(row["capture"] as? [String: Any])
+        let response: [String: Any] = ["data": ["audit": ["defects": [
+            ["roomId": "r1", "code": "TEST", "remedy": "Direct synthetic advice"]]]]]
+        let catalog: [String: Any] = ["remedies": [
+            ["defectCode": "TEST", "remedy": "Different catalog advice", "source": "Catalog-only fixture source", "classification": "fixture"]]]
+        let result = try RemedyFloorOverlay(capture: capture, response: response, catalog: catalog)
+        let marker = try XCTUnwrap(result.placements.first)
+        XCTAssertEqual(marker.advice, "Direct synthetic advice")
+        XCTAssertEqual(marker.sourceLabel, "Remedy source not supplied.")
+        XCTAssertNil(marker.classification)
+    }
+
     func testUnknownCaptureFailedResponseInvalidUnitsAndGeometryRefuse() throws {
         let row = try XCTUnwrap(try cases().first), capture = try XCTUnwrap(row["capture"] as? [String: Any])
         var response = try XCTUnwrap(row["response"] as? [String: Any])

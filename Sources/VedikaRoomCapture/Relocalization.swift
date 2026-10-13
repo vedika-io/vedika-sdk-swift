@@ -278,8 +278,8 @@ public final class PinnedFloorOverlayRenderer: @unchecked Sendable {
     public convenience init(session: ARSession, anchorId: UUID, reference: LocalWorldMapReference,
                             sessionId: UUID, northRevision: UUID, transform: FloorPlanAnchorTransform,
                             remedies: RemedyFloorOverlay, polygons: [FloorOverlayPolygon] = []) throws {
-        try self.init(session: session, anchorId: anchorId, reference: reference,
-            sessionId: sessionId, northRevision: northRevision, transform: transform,
+        try self.init(session: session, sessionId: sessionId, northRevision: northRevision,
+            reference: reference, anchorId: anchorId, transform: transform,
             polygons: polygons + remedies.polygons)
     }
     /// Fresh physical-marker observations in the CURRENT view viewport. A

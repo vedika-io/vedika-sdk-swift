@@ -88,11 +88,13 @@ public struct RemedyFloorOverlay: Sendable {
                 let suffix = "\(index)-\(room?.id ?? "plot")"
                 markers.append(Marker(id: "issue-\(suffix)", room: room, point: position, owner: owner))
                 let entry = remedyRows.first { ($0["defectCode"] as? String) == (defect["code"] as? String) && defect["code"] is String }
-                let advice = Self.text(defect["remedy"] ?? entry?["remedy"])
+                let directAdvice = Self.text(defect["remedy"])
+                let usesCatalog = directAdvice.isEmpty
+                let advice = usesCatalog ? Self.text(entry?["remedy"]) : directAdvice
                 if !advice.isEmpty {
                     markers.append(Marker(id: "remedy-\(suffix)", room: room, point: position, owner: owner,
-                        advice: advice, source: Self.text(defect["remedySource"] ?? entry?["source"]),
-                        classification: (defect["remedyClassification"] ?? entry?["classification"]) as? String,
+                        advice: advice, source: Self.text(usesCatalog ? entry?["source"] : defect["remedySource"]),
+                        classification: (usesCatalog ? entry?["classification"] : defect["remedyClassification"]) as? String,
                         zone: defect["zone"] as? String ?? room?.zone))
                 }
                 if let zone = defect["recommendedZone"] as? String, let room,

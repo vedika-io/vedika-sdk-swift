@@ -2,7 +2,7 @@
   "ask": "VA-05",
   "version": "1.4.0",
   "release_status": "candidate; tag and publication pending",
-  "source_sha": "55d8eb862b0c234721848dacfcf890cca427502c",
+  "source_sha": "e7a2050c834677942b4ada8db822660b54c67235",
   "package_url": "https://github.com/vedika-io/vedika-sdk-swift.git",
   "public_branch": "ci/1.4.0-candidate",
   "product": "VedikaRoomCapture",
@@ -32,7 +32,7 @@
       ]
     },
     "Sources/VedikaRoomCapture/Relocalization.swift": {
-      "sha256": "1518f9841b3d51087ffafda024aaabd1796bf0135d53086cfe7eb12d35c91ce7",
+      "sha256": "378ec8d1f6c473558eaf5165e285993b41ab427adeb79002da8bbf6082cde152",
       "symbols": [
         "OverlayRelocalizationGate",
         "LocalWorldMapReference",
@@ -100,7 +100,7 @@
       ]
     },
     "Sources/VedikaRoomCapture/RemedyFloorOverlay.swift": {
-      "sha256": "d1d3c84d74931a7da7aead32bdc70c2cb594beba593d79a64989a4346c7db001",
+      "sha256": "2b455ae43748c9384be45a4d0e6385d7d75efc722980ecefa106c258747cc4a0",
       "symbols": [
         "RemedyFloorOverlay",
         "RemedyFloorPlacement"
