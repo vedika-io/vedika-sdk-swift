@@ -12,7 +12,7 @@ resolve a package from a subdirectory of a larger repository.
 Version 1.4.0 is a release candidate; its tag and release are pending. For candidate testing, replace the version requirement below with `branch: "ci/1.4.0-candidate"`.
 
 ```swift
-.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.4.0")
+.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.4.1")
 ```
 
 Then add `VedikaSDK` to your target's dependencies. For the coached RoomPlan

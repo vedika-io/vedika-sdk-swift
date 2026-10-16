@@ -76,6 +76,21 @@ final class VastuRuntimeBundleTests: XCTestCase {
         XCTAssertGreaterThan(runtime.count, 10_000, "runtime.js should be substantial")
     }
 
+    func testTheRuntimeSendsTheKeyAsBearerAndNeverAsLegacyXApiKey() throws {
+        let directory = try packagedDirectory()
+        let js = try String(
+            contentsOf: directory.appendingPathComponent("runtime.js"), encoding: .utf8
+        )
+        XCTAssertTrue(
+            js.contains("Authorization: `Bearer ${apiKey}`"),
+            "the heading request must carry the key as Authorization: Bearer"
+        )
+        XCTAssertFalse(
+            js.lowercased().contains("x-api-key"),
+            "the runtime must not send the legacy x-api-key header"
+        )
+    }
+
     func testACorruptedResourceIsRefusedAndNamed() throws {
         let directory = try copyOfPackagedRuntime()
         let corrupted = directory.appendingPathComponent("runtime.js")
