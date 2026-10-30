@@ -96,9 +96,16 @@ public final class VedikaRateLimitError: VedikaApiError {
     /// retry will keep failing until it resets or the plan is upgraded.
     public var isDailyLimit: Bool { code == "DAILY_LIMIT_EXCEEDED" }
 
+    /// True for `MONTHLY_SPEND_LIMIT_REACHED`: the account's monthly spend
+    /// limit is reached. It clears only in the new month, or when the owner
+    /// raises or removes the limit under Billing, so a retry will keep failing.
+    public var isMonthlySpendLimit: Bool { code == "MONTHLY_SPEND_LIMIT_REACHED" }
+
     /// True when waiting `retryAfterSeconds` and calling again can succeed.
-    /// False for the daily and plan limits.
-    public var isRetryable: Bool { code != "DAILY_LIMIT_EXCEEDED" && code != "PLAN_LIMIT_EXCEEDED" }
+    /// False for the daily, plan and monthly spend limits.
+    public var isRetryable: Bool {
+        code != "DAILY_LIMIT_EXCEEDED" && code != "PLAN_LIMIT_EXCEEDED" && code != "MONTHLY_SPEND_LIMIT_REACHED"
+    }
 
     /// Where to upgrade the plan, when the API sent one.
     public var upgradeUrl: String? { body?["upgradeUrl"] as? String }

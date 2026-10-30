@@ -58,9 +58,7 @@ enum VastuRuntimeBundle {
     /// The directory holding the packaged runtime inside this module's own
     /// resource bundle — the same bytes an installed consumer loads.
     static var packagedDirectory: URL? {
-        Bundle.module
-            .url(forResource: "index", withExtension: "html", subdirectory: "VastuRuntime")?
-            .deletingLastPathComponent()
+        Bundle.vedikaRuntimeIndex?.deletingLastPathComponent()
     }
 
     /// Verifies every file in `directory` against that directory's manifest.

@@ -4778,6 +4778,13 @@ public struct VastuArRoomCaptureDataCompleteness {
     public var warnings: [String] { (raw["warnings"] as? [String])! }
 }
 
+public struct VastuArRoomCaptureDataAuditStatus {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var status: String { (raw["status"] as? String)! }
+    public var reasons: [String] { (raw["reasons"] as? [String])! }
+}
+
 public struct VastuArScanQualityDataDimensionsPointCloudDensity {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -4940,6 +4947,7 @@ public struct VastuArchiveDeleteDataErasureReceipt {
     public var deletedByAccountHash: String { (raw["deletedByAccountHash"] as? String)! }
     public var deletedAtEpoch: Int { vastuInt(raw["deletedAtEpoch"])! }
     public var revisionId: String? { (raw["revisionId"] as? String) }
+    public var receiptId: String? { (raw["receiptId"] as? String) }
 }
 
 public struct VastuArchiveSummaryDataArchiveTier {
@@ -5023,6 +5031,7 @@ public struct VastuAssessmentBatchDataResultsItemResponseData {
     public var charged: Bool? { vastuBool(raw["charged"]) }
     public var meta: [String: Any] { (raw["meta"] as? [String: Any])! }
     public var listingId: Any? { (raw["listingId"] is NSNull ? nil : raw["listingId"]) }
+    public var rulesVersion: String? { (raw["rulesVersion"] as? String) }
 }
 
 public struct VastuAssessmentBatchDataResultsItemResponseBilling {
@@ -5801,6 +5810,40 @@ public struct VastuPlanAuditDataReceipt {
     public var keyUrl: String { (raw["keyUrl"] as? String)! }
 }
 
+public struct VastuPlanExportIfcDataStoreysItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var level: Int { vastuInt(raw["level"])! }
+    public var name: String { (raw["name"] as? String)! }
+    public var elevationM: Double { vastuDouble(raw["elevationM"])! }
+    public var roomCount: Int { vastuInt(raw["roomCount"])! }
+}
+
+public struct VastuPlanGenerateDataFloorsItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var level: Int { vastuInt(raw["level"])! }
+    public var label: String { (raw["label"] as? String)! }
+    public var rooms: [String] { (raw["rooms"] as? [String])! }
+    public var roomCount: Int { vastuInt(raw["roomCount"])! }
+    public var openTerrace: Bool { vastuBool(raw["openTerrace"])! }
+    public var note: String? { (raw["note"] as? String) }
+    public var compliance: [String: Any]? { (raw["compliance"] as? [String: Any]) }
+    public var placedArea: Double? { vastuDouble(raw["placedArea"]) }
+    public var utilisationPct: Double? { vastuDouble(raw["utilisationPct"]) }
+    public var svg: String? { (raw["svg"] as? String) }
+}
+
+public struct VastuPlanGenerateDataWarningsItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var code: String { (raw["code"] as? String)! }
+    public var floor: Int? { vastuInt(raw["floor"]) }
+    public var label: String? { (raw["label"] as? String) }
+    public var field: String { (raw["field"] as? String)! }
+    public var message: String { (raw["message"] as? String)! }
+}
+
 public struct VastuPlanGenerateDataPlotRegionGeometry {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -5976,6 +6019,8 @@ public struct VastuPlanImportDxfDataPlanPlot {
     public var length: Double { vastuDouble(raw["length"])! }
     public var polygon: [[Double]]? { (raw["polygon"] as? [[Double]]) }
     public var units: String? { (raw["units"] as? String) }
+    public var facing: String? { (raw["facing"] as? String) }
+    public var area: Double? { vastuDouble(raw["area"]) }
 }
 
 public struct VastuPlanImportDxfDataPlanRoomsItem {
@@ -6035,6 +6080,8 @@ public struct VastuPlanImportDxfDataPlan {
     public var orientationDeg: Double? { vastuDouble(raw["orientationDeg"]) }
     public var units: String { (raw["units"] as? String)! }
     public var cadMetadata: [String: Any]? { (raw["cadMetadata"] as? [String: Any]) }
+    public var canonicalUnits: String? { (raw["canonicalUnits"] as? String) }
+    public var sourceInputUnits: String? { (raw["sourceInputUnits"] as? String) }
 }
 
 public struct VastuPlanImportDxfDataMappingReportItem {
@@ -6135,6 +6182,8 @@ public struct VastuPlanImportIfcDataStoreysItemPlan {
     public var orientationDeg: Double? { vastuDouble(raw["orientationDeg"]) }
     public var units: String { (raw["units"] as? String)! }
     public var cadMetadata: [String: Any]? { (raw["cadMetadata"] as? [String: Any]) }
+    public var canonicalUnits: String? { (raw["canonicalUnits"] as? String) }
+    public var sourceInputUnits: String? { (raw["sourceInputUnits"] as? String) }
 }
 
 public struct VastuPlanImportIfcDataStoreysItem {
@@ -6534,6 +6583,7 @@ public struct VastuPropertiesDeleteDataErasureReceipt {
     public var deletedByAccountHash: String { (raw["deletedByAccountHash"] as? String)! }
     public var deletedAtEpoch: Int { vastuInt(raw["deletedAtEpoch"])! }
     public var revisionId: String? { (raw["revisionId"] as? String) }
+    public var receiptId: String? { (raw["receiptId"] as? String) }
 }
 
 public struct VastuPropertiesGetDataIds {
@@ -6742,6 +6792,37 @@ public struct VastuRemedyComparisonDataNotAssessedItem {
     public var zone: String { (raw["zone"] as? String)! }
     public var reason: String { (raw["reason"] as? String)! }
     public var graded: Bool { vastuBool(raw["graded"])! }
+}
+
+public struct VastuScanStoredDataAuditStatus {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var status: String { (raw["status"] as? String)! }
+    public var reasons: [String] { (raw["reasons"] as? [String])! }
+}
+
+public struct VastuScansDeleteDataDeletionReceiptRemovedItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var kind: String { (raw["kind"] as? String)! }
+    public var artifactId: String { (raw["artifactId"] as? String)! }
+}
+
+public struct VastuScansDeleteDataDeletionReceipt {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var schemaVersion: Int { vastuInt(raw["schemaVersion"])! }
+    public var kind: String { (raw["kind"] as? String)! }
+    public var scanId: String { (raw["scanId"] as? String)! }
+    public var scope: String { (raw["scope"] as? String)! }
+    public var removed: [VastuScansDeleteDataDeletionReceiptRemovedItem] { (raw["removed"] as! [[String: Any]]).map { VastuScansDeleteDataDeletionReceiptRemovedItem(raw: $0) } }
+    public var scopeNote: String? { (raw["scopeNote"] as? String) }
+    public var deletedByAccountHash: String { (raw["deletedByAccountHash"] as? String)! }
+    public var deletedAtEpoch: Int { vastuInt(raw["deletedAtEpoch"])! }
+    public var deletedAt: String { (raw["deletedAt"] as? String)! }
+    public var hashAlgorithm: String { (raw["hashAlgorithm"] as? String)! }
+    public var receiptId: String { (raw["receiptId"] as? String)! }
+    public var receiptHash: String { (raw["receiptHash"] as? String)! }
 }
 
 public struct VastuSpecializedAuditDataFindingsItem {
@@ -6997,6 +7078,7 @@ public struct VastuArRoomCaptureData: VastuData {
     public var deviceAttestation: Any { raw["deviceAttestation"]! }
     public var uncertainty: VastuMeasurementUncertainty? { (raw["uncertainty"] as? [String: Any]).map { VastuMeasurementUncertainty(raw: $0) } }
     public var rulesVersion: String? { (raw["rulesVersion"] as? String) }
+    public var auditStatus: VastuArRoomCaptureDataAuditStatus? { (raw["auditStatus"] as? [String: Any]).map { VastuArRoomCaptureDataAuditStatus(raw: $0) } }
 }
 
 public struct VastuArScanQualityData: VastuData {
@@ -7023,6 +7105,8 @@ public struct VastuArScanQualityData: VastuData {
     public var deviceAttested: Bool? { vastuBool(raw["deviceAttested"]) }
     public var rulesVersion: String? { (raw["rulesVersion"] as? String) }
     public var receipt: VastuArScanQualityDataReceipt? { (raw["receipt"] as? [String: Any]).map { VastuArScanQualityDataReceipt(raw: $0) } }
+    public var gradeStatus: String? { (raw["gradeStatus"] as? String) }
+    public var gradeReasons: [String]? { (raw["gradeReasons"] as? [String]) }
 }
 
 public struct VastuArTrueNorthData: VastuData {
@@ -7088,6 +7172,9 @@ public struct VastuArchiveDeleteData: VastuData {
     public var retryAfterEpoch: Int? { vastuInt(raw["retryAfterEpoch"]) }
     public var revisionId: String? { (raw["revisionId"] as? String) }
     public var replayed: Bool? { vastuBool(raw["replayed"]) }
+    public var receiptId: String? { (raw["receiptId"] as? String) }
+    public var receiptStatus: String? { (raw["receiptStatus"] as? String) }
+    public var readReceipt: String? { (raw["readReceipt"] as? String) }
 }
 
 public struct VastuArchiveExportData: VastuData {
@@ -7359,6 +7446,8 @@ public struct VastuDetailedFloorPlanAuditData: VastuData {
     public var merchantCatalogRevision: Int? { vastuInt(raw["merchantCatalogRevision"]) }
     public var rulesVersion: String? { (raw["rulesVersion"] as? String) }
     public var receipt: VastuDetailedFloorPlanAuditDataReceipt? { (raw["receipt"] as? [String: Any]).map { VastuDetailedFloorPlanAuditDataReceipt(raw: $0) } }
+    public var gradeStatus: String? { (raw["gradeStatus"] as? String) }
+    public var gradeReasons: [String]? { (raw["gradeReasons"] as? [String]) }
 }
 
 public struct VastuDirectionCorrectData: VastuData {
@@ -7839,6 +7928,10 @@ public struct VastuPlanAuditData: VastuData {
     public var units: String? { (raw["units"] as? String) }
     public var inputUnits: String? { (raw["inputUnits"] as? String) }
     public var metresPerInputUnit: Double? { vastuDouble(raw["metresPerInputUnit"]) }
+    public var gradeStatus: String? { (raw["gradeStatus"] as? String) }
+    public var gradeReasons: [String]? { (raw["gradeReasons"] as? [String]) }
+    public var directionalScoreStatus: String? { (raw["directionalScoreStatus"] as? String) }
+    public var directionalScoreMessage: String? { (raw["directionalScoreMessage"] as? String) }
 }
 
 public struct VastuPlanConvertUnitsData: VastuData {
@@ -7874,6 +7967,7 @@ public struct VastuPlanExportDxfData: VastuData {
     public var units: String? { (raw["units"] as? String) }
     public var inputUnits: String? { (raw["inputUnits"] as? String) }
     public var metresPerInputUnit: Double? { vastuDouble(raw["metresPerInputUnit"]) }
+    public var canonicalUnits: String? { (raw["canonicalUnits"] as? String) }
 }
 
 public struct VastuPlanExportIfcData: VastuData {
@@ -7890,6 +7984,8 @@ public struct VastuPlanExportIfcData: VastuData {
     public var inputUnits: String? { (raw["inputUnits"] as? String) }
     public var metresPerInputUnit: Double? { vastuDouble(raw["metresPerInputUnit"]) }
     public var canonicalUnits: String { (raw["canonicalUnits"] as? String)! }
+    public var storeyCount: Int? { vastuInt(raw["storeyCount"]) }
+    public var storeys: [VastuPlanExportIfcDataStoreysItem]? { (raw["storeys"] as? [[String: Any]])?.map { VastuPlanExportIfcDataStoreysItem(raw: $0) } }
 }
 
 public struct VastuPlanGenerateData: VastuData {
@@ -7916,10 +8012,11 @@ public struct VastuPlanGenerateData: VastuData {
     public var variantCount: Double? { vastuDouble(raw["variantCount"]) }
     public var variantNote: String? { (raw["variantNote"] as? String) }
     public var verified: Bool? { vastuBool(raw["verified"]) }
-    public var floors: [[String: Any]]? { (raw["floors"] as? [[String: Any]]) }
+    public var floors: [VastuPlanGenerateDataFloorsItem]? { (raw["floors"] as? [[String: Any]])?.map { VastuPlanGenerateDataFloorsItem(raw: $0) } }
     public var core: [String: Any]? { (raw["core"] as? [String: Any]) }
     public var verticalChecks: [[String: Any]]? { (raw["verticalChecks"] as? [[String: Any]]) }
     public var floorNote: String? { (raw["floorNote"] as? String) }
+    public var warnings: [VastuPlanGenerateDataWarningsItem]? { (raw["warnings"] as? [[String: Any]])?.map { VastuPlanGenerateDataWarningsItem(raw: $0) } }
     public var uncertainty: VastuMeasurementUncertainty? { (raw["uncertainty"] as? [String: Any]).map { VastuMeasurementUncertainty(raw: $0) } }
     public var merchantCatalogId: String? { (raw["merchantCatalogId"] as? String) }
     public var merchantCatalogRevision: Int? { vastuInt(raw["merchantCatalogRevision"]) }
@@ -7961,6 +8058,7 @@ public struct VastuPlanImportDxfData: VastuData {
     public var units: String? { (raw["units"] as? String) }
     public var inputUnits: String? { (raw["inputUnits"] as? String) }
     public var metresPerInputUnit: Double? { vastuDouble(raw["metresPerInputUnit"]) }
+    public var canonicalUnits: String? { (raw["canonicalUnits"] as? String) }
 }
 
 public struct VastuPlanImportIfcData: VastuData {
@@ -7978,6 +8076,7 @@ public struct VastuPlanImportIfcData: VastuData {
     public var units: String? { (raw["units"] as? String) }
     public var inputUnits: String? { (raw["inputUnits"] as? String) }
     public var metresPerInputUnit: Double? { vastuDouble(raw["metresPerInputUnit"]) }
+    public var canonicalUnits: String? { (raw["canonicalUnits"] as? String) }
 }
 
 public struct VastuPlanOptimizeData: VastuData {
@@ -8297,6 +8396,9 @@ public struct VastuPropertiesDeleteData: VastuData {
     public var linkedAssessmentIds: [String]? { (raw["linkedAssessmentIds"] as? [String]) }
     public var revisionId: String? { (raw["revisionId"] as? String) }
     public var replayed: Bool? { vastuBool(raw["replayed"]) }
+    public var receiptId: String? { (raw["receiptId"] as? String) }
+    public var receiptStatus: String? { (raw["receiptStatus"] as? String) }
+    public var readReceipt: String? { (raw["readReceipt"] as? String) }
 }
 
 public struct VastuPropertiesGetData: VastuData {
@@ -8504,6 +8606,7 @@ public struct VastuScanStoredData: VastuData {
     public var geometryUnits: String { (raw["geometryUnits"] as? String)! }
     public var assessmentNote: String { (raw["assessmentNote"] as? String)! }
     public var rulesVersion: String? { (raw["rulesVersion"] as? String) }
+    public var auditStatus: VastuScanStoredDataAuditStatus? { (raw["auditStatus"] as? [String: Any]).map { VastuScanStoredDataAuditStatus(raw: $0) } }
 }
 
 public struct VastuScansDeleteData: VastuData {
@@ -8515,6 +8618,11 @@ public struct VastuScansDeleteData: VastuData {
     public var persistence: String { (raw["persistence"] as? String)! }
     public var previewNote: String? { (raw["previewNote"] as? String) }
     public var rulesVersion: String? { (raw["rulesVersion"] as? String) }
+    public var propertyId: String? { (raw["propertyId"] as? String) }
+    public var settlement: String? { (raw["settlement"] as? String) }
+    public var alreadyDeleted: Bool? { vastuBool(raw["alreadyDeleted"]) }
+    public var receiptId: String? { (raw["receiptId"] as? String) }
+    public var deletionReceipt: VastuScansDeleteDataDeletionReceipt? { (raw["deletionReceipt"] as? [String: Any]).map { VastuScansDeleteDataDeletionReceipt(raw: $0) } }
 }
 
 public struct VastuScansListData: VastuData {

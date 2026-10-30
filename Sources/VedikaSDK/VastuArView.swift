@@ -189,7 +189,7 @@ public final class VastuArView: UIViewController {
         """
 
     public init(arURL: URL? = nil) {
-        let target = arURL ?? Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "VastuRuntime")!
+        let target = arURL ?? Bundle.vedikaRuntimeIndex!
         precondition(arURL == nil || VastuArPolicy.secureOrigin(target) != nil, "AR URL must use HTTPS without user information")
         self.arURL = target
 

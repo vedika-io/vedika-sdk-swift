@@ -73,6 +73,23 @@ final class ErrorHandlingTests: XCTestCase {
         XCTAssertEqual(server.requests().count, 1)
     }
 
+    func testMonthlySpendLimitIsNotRetryableAndIsNotADailyLimit() async throws {
+        server.enqueue(stub(
+            429, #"{"success":false,"code":"MONTHLY_SPEND_LIMIT_REACHED","message":"Monthly spend limit reached","retryAfter":1}"#,
+            headers: ["x-ratelimit-remaining": "59", "Retry-After": "1"]))
+        server.enqueue(stub(200, #"{"success":true}"#))
+        do {
+            _ = try await client().vastu.vastuScore("overall", params: [:])
+            XCTFail("a 429 must throw")
+        } catch let error as VedikaRateLimitError {
+            XCTAssertEqual(error.code, "MONTHLY_SPEND_LIMIT_REACHED")
+            XCTAssertTrue(error.isMonthlySpendLimit)
+            XCTAssertFalse(error.isDailyLimit)
+            XCTAssertFalse(error.isRetryable)
+        }
+        XCTAssertEqual(server.requests().count, 1)
+    }
+
     func testPerMinuteLimitCarriesRetryAfterFromTheBodyBeforeTheHeader() async throws {
         server.enqueue(stub(429, #"{"code":"RATE_LIMIT_EXCEEDED","retryAfter":7}"#, headers: ["Retry-After": "99"]))
         do {
@@ -190,6 +207,6 @@ final class ErrorHandlingTests: XCTestCase {
         server.enqueue(stub(200, #"{"success":true}"#))
         _ = try await client().vastu.vastuScore("overall", params: [:])
         let wire = try XCTUnwrap(server.requests().first)
-        XCTAssertEqual(header(wire, "X-SDK"), "vedika-swift/1.4.1")
+        XCTAssertEqual(header(wire, "X-SDK"), "vedika-swift/1.4.2")
     }
 }

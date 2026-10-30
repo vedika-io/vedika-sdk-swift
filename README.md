@@ -9,10 +9,8 @@ resolve a package from a subdirectory of a larger repository.
 
 ## Install
 
-Version 1.4.0 is a release candidate; its tag and release are pending. For candidate testing, replace the version requirement below with `branch: "ci/1.4.0-candidate"`.
-
 ```swift
-.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.4.1")
+.package(url: "https://github.com/vedika-io/vedika-sdk-swift.git", from: "1.4.2")
 ```
 
 Then add `VedikaSDK` to your target's dependencies. For the coached RoomPlan
@@ -31,6 +29,17 @@ Physical scanning, compass accuracy and map restoration still require device
 acceptance. Synthetic replay does not prove physical accuracy.
 
 Platforms: iOS 15+, macOS 12+ (`URLSession.data(for:)` async needs that floor).
+
+### CocoaPods
+
+From 1.4.2 the API client, Vastu service and AR view are also a pod:
+
+```ruby
+pod 'VedikaSDK', '~> 1.4'
+```
+
+The pod is `VedikaSDK` only. `VedikaRoomCapture` (RoomPlan capture, the encrypted offline queue and the
+relocalization gate) is a second SwiftPM module and stays SwiftPM only.
 
 ## Use
 
@@ -144,6 +153,56 @@ loss gates hide both zones and remedies when uncertain. Display full advice and
 `sourceLabel` from `placements` alongside the numbered floor markers.
 Geometry tests run on macOS; the ARKit renderer runs only on iOS.
 Real-phone accuracy is not yet measured.
+
+## Scan two floors and merge
+
+Scan each floor on its own, record its floor index before scanning, and measure
+its elevation above the building datum. Then pick the same stair (or measured
+door) points on both plans and call `FloorMerge.merge`, which posts
+`ar/capture-merge`. Available from 1.4.2.
+
+A "merge floors" screen can drive `FloorMergeSession`: `addFloor(_:elevationM:)`,
+`addPick(captureId:reference:next:)`, `canMerge`, `status`, `prepare()` and `merge(service:idempotencyKey:)`.
+It only collects the floors and picked points; `FloorMerge` still validates them and refuses a bad link
+before anything is sent. Available from 1.4.2, like `FloorMerge`.
+
+```swift
+let input = FloorMergeInput(
+    scans: [FloorScan(capture: ground, elevationM: 0), FloorScan(capture: first, elevationM: 3.2)],
+    links: [
+        FloorLink(toCaptureId: first.captureId, kind: .stair, points: [ // the same spot: reference plan, then first-floor plan, metres
+            SharedFloorPoint(reference: FloorPoint(x: 2, y: 1), next: FloorPoint(x: 0.8, y: 0.6)),
+            SharedFloorPoint(reference: FloorPoint(x: 2, y: 3), next: FloorPoint(x: 0.8, y: 2.6)),
+            SharedFloorPoint(reference: FloorPoint(x: 4, y: 2), next: FloorPoint(x: 2.8, y: 1.6)),
+        ])
+    ],
+    toleranceM: 0.05)
+let result = try await FloorMerge.merge(service: client.vastu, input: input, idempotencyKey: retainedKey)
+result.building.floorStack      // both floors, one building
+result.registration.describe()  // the stated shared-point error
+```
+
+- The first scan is the reference floor. Every other floor needs one link of at
+  least 3 shared points (the wire minimum is 2; 3 gives a check beyond a
+  baseline). Points must lie inside their own floor's outline and be at least
+  0.1 m apart on both floors.
+- `FloorMerge.prepare(_:)` builds and validates the request with no network
+  call. A bad link throws `FloorMergeRefused` (`reason` is a `FloorMergeRefusal`)
+  before anything is sent, so nothing is billed: fewer than two floors, an
+  unknown or duplicate link, a duplicate floor index, capture id or elevation,
+  too few or non-finite points, points outside the floor, or an error above
+  `toleranceM`.
+- The API links only captures on the same floor, so the shared points become one
+  floor frame per floor (`floors[].originXY`) and `links` is empty. The merge is
+  translation only: each scan's recorded true north is kept and there is no
+  scale change.
+- The call is billed. Keep `idempotencyKey` (1-256 visible ASCII characters) and
+  reuse it, with the same input, to retry a timeout without a second charge.
+  `maxChargeUsd` caps the debit; the API refuses a higher charge before any
+  debit.
+- The stated error is the agreement of your picked points (RMS and maximum, in
+  metres), not survey or house accuracy. A response that does not match what was
+  sent throws `FloorMergeResponseError`; keep the original scans.
 
 ## Keys
 

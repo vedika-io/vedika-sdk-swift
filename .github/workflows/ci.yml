@@ -26,3 +26,20 @@ jobs:
           xcodebuild build -scheme VedikaSDK
           -destination 'generic/platform=iOS'
           CODE_SIGNING_ALLOWED=NO
+
+  pod-lib-lint:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: pod --version && swift --version && xcodebuild -version
+      - name: Lint the podspec
+        run: |
+          set -o pipefail
+          pod lib lint VedikaSDK.podspec 2>&1 | tee pod-lib-lint.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pod-lib-lint
+          path: pod-lib-lint.log
