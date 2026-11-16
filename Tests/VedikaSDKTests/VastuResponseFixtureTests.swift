@@ -144,6 +144,8 @@ final class VastuResponseFixtureTests: XCTestCase {
             "vastu__plan_export_ifc": "VastuPlanExportIfcData",
             "vastu__plan_convert_units": "VastuPlanConvertUnitsData",
             "vastu__plan_import_ifc": "VastuPlanImportIfcData",
+            "vastu__plan_compare_versions": "VastuCompareVersionsData",
+            "vastu__rules_versions": "VastuRuleVersionsData",
             "vastu__plan_upload": "VastuPlanAuditData",
             "vastu__plan_report": "VastuPlanAuditData",
             "vastu__ar_heatmap_raster": "VastuArHeatmapRasterData",
@@ -161,8 +163,8 @@ final class VastuResponseFixtureTests: XCTestCase {
             "vastu__fusion_chart": "VastuFusionChartData",
             "vastu__compare_before_after_remedy": "VastuRemedyComparisonData",
         ]
-        XCTAssertEqual(demos.count, 101)
-        XCTAssertEqual(Set(types.values).count, 65)
+        XCTAssertEqual(demos.count, 103)
+        XCTAssertEqual(Set(types.values).count, 67)
         for (key, response) in demos {
             let raw = response["data"] as! [String: Any]
             let actual: [String: Any]
@@ -233,6 +235,8 @@ final class VastuResponseFixtureTests: XCTestCase {
             case "VastuPlanConvertUnitsData": actual = readVastuPlanConvertUnitsData(VastuPlanConvertUnitsData(raw: raw))
             case "VastuPlanExportDxfData": actual = readVastuPlanExportDxfData(VastuPlanExportDxfData(raw: raw))
             case "VastuPlanImportIfcData": actual = readVastuPlanImportIfcData(VastuPlanImportIfcData(raw: raw))
+            case "VastuCompareVersionsData": actual = readVastuCompareVersionsData(VastuCompareVersionsData(raw: raw))
+            case "VastuRuleVersionsData": actual = readVastuRuleVersionsData(VastuRuleVersionsData(raw: raw))
             default: return XCTFail("Unmapped response: \(key)")
             }
             for (field, value) in actual {
@@ -669,6 +673,7 @@ private func readVastuAssessmentBatchDataResultsItemResponseDataSourcesItem(_ va
 
 private func readVastuAssessmentBatchDataResultsItemResponseData(_ value: VastuAssessmentBatchDataResultsItemResponseData) -> [String: Any] {
     [
+        "rulesVersion": (value.rulesVersion as Any?) ?? NSNull(),
         "system": (value.system as Any?) ?? NSNull(),
         "method": (value.method as Any?) ?? NSNull(),
         "status": (value.status as Any?) ?? NSNull(),
@@ -859,8 +864,17 @@ private func readVastuArAnchorRecommendationsData(_ value: VastuArAnchorRecommen
     ]
 }
 
+private func readVastuArRoomCaptureDataCaptureOutlineGeometry(_ value: VastuArRoomCaptureDataCaptureOutlineGeometry) -> [String: Any] {
+    [
+        "polygon": (value.polygon as Any?) ?? NSNull(),
+        "holes": (value.holes as Any?) ?? NSNull(),
+        "multipolygons": (value.multipolygons as Any?) ?? NSNull(),
+    ]
+}
+
 private func readVastuArRoomCaptureDataCaptureOutline(_ value: VastuArRoomCaptureDataCaptureOutline) -> [String: Any] {
     [
+        "geometry": (value.geometry.map(readVastuArRoomCaptureDataCaptureOutlineGeometry) as Any?) ?? NSNull(),
         "polygon": (value.polygon as Any?) ?? NSNull(),
         "source": (value.source as Any?) ?? NSNull(),
         "width": (value.width as Any?) ?? NSNull(),
@@ -871,6 +885,8 @@ private func readVastuArRoomCaptureDataCaptureOutline(_ value: VastuArRoomCaptur
 
 private func readVastuArRoomCaptureDataCapture(_ value: VastuArRoomCaptureDataCapture) -> [String: Any] {
     [
+        "units": (value.units as Any?) ?? NSNull(),
+        "inputUnits": (value.inputUnits as Any?) ?? NSNull(),
         "captureId": (value.captureId as Any?) ?? NSNull(),
         "capturedAtEpoch": (value.capturedAtEpoch as Any?) ?? NSNull(),
         "device": (value.device as Any?) ?? NSNull(),
@@ -883,8 +899,17 @@ private func readVastuArRoomCaptureDataCapture(_ value: VastuArRoomCaptureDataCa
     ]
 }
 
+private func readVastuArRoomCaptureDataRoomsItemGeometry(_ value: VastuArRoomCaptureDataRoomsItemGeometry) -> [String: Any] {
+    [
+        "polygon": (value.polygon as Any?) ?? NSNull(),
+        "holes": (value.holes as Any?) ?? NSNull(),
+        "multipolygons": (value.multipolygons as Any?) ?? NSNull(),
+    ]
+}
+
 private func readVastuArRoomCaptureDataRoomsItem(_ value: VastuArRoomCaptureDataRoomsItem) -> [String: Any] {
     [
+        "geometry": (value.geometry.map(readVastuArRoomCaptureDataRoomsItemGeometry) as Any?) ?? NSNull(),
         "id": (value.id as Any?) ?? NSNull(),
         "label": (value.label as Any?) ?? NSNull(),
         "roomType": (value.roomType as Any?) ?? NSNull(),
@@ -917,8 +942,16 @@ private func readVastuArRoomCaptureDataCompleteness(_ value: VastuArRoomCaptureD
     ]
 }
 
+private func readVastuArRoomCaptureDataAuditStatus(_ value: VastuArRoomCaptureDataAuditStatus) -> [String: Any] {
+    [
+        "status": value.status,
+        "reasons": value.reasons,
+    ]
+}
+
 private func readVastuArRoomCaptureData(_ value: VastuArRoomCaptureData) -> [String: Any] {
     [
+        "auditStatus": (value.auditStatus.map(readVastuArRoomCaptureDataAuditStatus) as Any?) ?? NSNull(),
         "method": (value.method as Any?) ?? NSNull(),
         "schema": (value.schema as Any?) ?? NSNull(),
         "capture": (readVastuArRoomCaptureDataCapture(value.capture) as Any?) ?? NSNull(),
@@ -1143,6 +1176,33 @@ private func readVastuCatalogReferenceData(_ value: VastuCatalogReferenceData) -
         "note": (value.note as Any?) ?? NSNull(),
         "meta": (value.meta as Any?) ?? NSNull(),
         "referenceVersion": (value.referenceVersion as Any?) ?? NSNull(),
+    ]
+}
+
+private func readVastuCompareVersionsData(_ value: VastuCompareVersionsData) -> [String: Any] {
+    [
+        "inputHash": (value.inputHash as Any?) ?? NSNull(),
+        "operation": (value.operation as Any?) ?? NSNull(),
+        "fromVersion": (value.fromVersion as Any?) ?? NSNull(),
+        "toVersion": (value.toVersion as Any?) ?? NSNull(),
+        "fromAssessment": (value.fromAssessment as Any?) ?? NSNull(),
+        "toAssessment": (value.toAssessment as Any?) ?? NSNull(),
+        "changed": (value.changed as Any?) ?? NSNull(),
+        "changes": (value.changes as Any?) ?? NSNull(),
+        "retainedVersions": (value.retainedVersions as Any?) ?? NSNull(),
+        "scope": (value.scope as Any?) ?? NSNull(),
+        "rulesVersion": (value.rulesVersion as Any?) ?? NSNull(),
+    ]
+}
+
+private func readVastuRuleVersionsData(_ value: VastuRuleVersionsData) -> [String: Any] {
+    [
+        "currentVersion": (value.currentVersion as Any?) ?? NSNull(),
+        "retainedVersions": (value.retainedVersions as Any?) ?? NSNull(),
+        "versions": (value.versions as Any?) ?? NSNull(),
+        "scope": (value.scope as Any?) ?? NSNull(),
+        "scoringVersion": (value.scoringVersion as Any?) ?? NSNull(),
+        "rulesVersion": (value.rulesVersion as Any?) ?? NSNull(),
     ]
 }
 

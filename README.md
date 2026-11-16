@@ -157,7 +157,13 @@ Real-phone accuracy is not yet measured.
 ## Scan two floors and merge
 
 Scan each floor on its own, record its floor index before scanning, and measure
-its elevation above the building datum. Then pick the same stair (or measured
+its elevation above the building datum. RoomPlan records each room's story.
+For an ARKit corner scan, pass the floor to
+`ARKitCornerCaptureController(captureId:floorIndex:)` or
+`RoomCaptureModel(_:floorIndex:)` (ground 0, basements -1 to -3, upper floors
+up to 9); every room of that scan records it. `FloorMerge` stacks scans by this
+index without relabelling, so two corner scans left at the default 0 are refused
+as the same floor (unreleased: before this, a corner scan always recorded 0). Then pick the same stair (or measured
 door) points on both plans and call `FloorMerge.merge`, which posts
 `ar/capture-merge`. Available from 1.4.2.
 
