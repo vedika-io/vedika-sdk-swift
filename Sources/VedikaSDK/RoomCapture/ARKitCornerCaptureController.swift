@@ -46,9 +46,12 @@ public final class ARKitCornerCaptureController: NSObject {
     private var featurePointCounts: [Int] = []
     private var trackingState: ARCamera.TrackingState = .notAvailable
 
-    public init(captureId: String, session: ARSession = ARSession()) {
+    /// `floorIndex` is the storey this scan records (ground 0, basements -1 to
+    /// -3, upper floors up to 9). Scan each floor of a building with its own,
+    /// or `FloorMerge` refuses the second scan as the same floor.
+    public init(captureId: String, floorIndex: Int = 0, session: ARSession = ARSession()) {
         self.session = session
-        self.model = RoomCaptureModel(captureId)
+        self.model = RoomCaptureModel(captureId, floorIndex: floorIndex)
         super.init()
         session.delegate = self
     }

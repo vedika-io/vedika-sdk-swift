@@ -3,8 +3,8 @@
     "schemaVersion": 2,
     "source": "frozen local vedika-v2 sandbox_router handlers",
     "generatedBy": "scripts/catalog/harvest-vastu-sandbox-demos.mjs",
-    "endpointCount": 101,
-    "demoCount": 101,
+    "endpointCount": 103,
+    "demoCount": 103,
     "unavailableCount": 0,
     "unavailable": [],
     "language": "en",
@@ -2664,6 +2664,45 @@
       "requestFingerprint": "b8c878edb11e50a2bcbfda094c04f243dd2b0a22ee93814934355d1b5a442865",
       "responseFingerprint": "02ad75bcc9e01d4e124721c3d7bd074972c8071a8771db285c4c420b79575b16",
       "fixtureFingerprint": "58575f1854be90d8907f34aa74b1a8e53d9d4b72a154a2361af75d1f43ccb1fa"
+    },
+    "vastu__plan_compare_versions": {
+      "request": {
+        "body": {
+          "fromVersion": "vastu-rules-2026-10-04",
+          "input": {
+            "rooms": [
+              {
+                "name": "living",
+                "zone": "CENTER"
+              },
+              {
+                "name": "dining",
+                "zone": "SE"
+              }
+            ]
+          },
+          "toVersion": "vastu-rules-2026-10-20"
+        },
+        "language": "en",
+        "method": "POST",
+        "path": "/sandbox/vastu/plan/compare-versions",
+        "query": {}
+      },
+      "requestFingerprint": "05a86723c02797f29230c051a58d8df42ef0fb9827fc8d615d9447779643a149",
+      "responseFingerprint": "0f218ce8f8e085505e27bd68e7f6a098f593ca4330c46cc05ea9f79f544d2bb8",
+      "fixtureFingerprint": "a050f4124bf0b475141c2012224222136e338f0e4ccc97f53e4912a8e24cb222"
+    },
+    "vastu__rules_versions": {
+      "request": {
+        "body": null,
+        "language": "en",
+        "method": "GET",
+        "path": "/sandbox/vastu/rules/versions",
+        "query": {}
+      },
+      "requestFingerprint": "ad37d51cb3b899347b8b06ed0a5bddc4a6520e13718164cfc1a1c242e7eaa50f",
+      "responseFingerprint": "cc5a3b58bb596295a015b351b26aeb7f0041da8528d6fc3c440c63b5f0555d3e",
+      "fixtureFingerprint": "ad96b5b541853db9406ca50721534906649ba9903478716f9bae1707ec118a93"
     }
   },
   "demos": {
@@ -40959,6 +40998,1024 @@
           "maxRooms": 8
         },
         "version": "2.1.0"
+      },
+      "success": true
+    },
+    "vastu__plan_compare_versions": {
+      "billing": {
+        "balanceAfter": 100,
+        "balanceBefore": 100,
+        "category": "astrology",
+        "charged": 0,
+        "currency": "USD",
+        "endpoint": "/sandbox/vastu/plan/compare-versions"
+      },
+      "data": {
+        "changed": true,
+        "changes": [
+          {
+            "after": [],
+            "before": [
+              {
+                "issue": "living in CENTER is a Vastu defect (moderate).",
+                "remedy": "Keep the Brahmasthan uncluttered and well lit. A copper yantra overhead is the customary remedy object for this zone.",
+                "remedyClassification": "convention",
+                "remedySource": "modern Vastu remedial practice (not a classical verse)",
+                "remedyType": "modern remedial practice",
+                "room": "living",
+                "severity": "moderate",
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "tradition": "traditional Vastu convention",
+                "verified": false,
+                "zone": "CENTER"
+              },
+              {
+                "issue": "dining in SE is a Vastu defect (moderate).",
+                "remedy": "A copper pyramid and white quartz in the north-east part of the room are the customary remedy objects for the South-East zone.",
+                "remedyClassification": "convention",
+                "remedySource": "modern Vastu remedial practice (not a classical verse)",
+                "remedyType": "modern remedial practice",
+                "room": "dining",
+                "severity": "moderate",
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "tradition": "traditional Vastu convention",
+                "verified": false,
+                "zone": "SE"
+              }
+            ],
+            "fromReason": null,
+            "reason": "Recomputed from changed placement findings using the same published score formula",
+            "ruleId": "defects",
+            "toReason": null
+          },
+          {
+            "after": "C",
+            "before": "E",
+            "fromReason": null,
+            "reason": "Recomputed from changed placement findings using the same published score formula",
+            "ruleId": "grade",
+            "toReason": null
+          },
+          {
+            "after": "Average (Madhyama)",
+            "before": "Defective (Adhama)",
+            "fromReason": null,
+            "reason": "Recomputed from changed placement findings using the same published score formula",
+            "ruleId": "gradeLabel",
+            "toReason": null
+          },
+          {
+            "after": 60,
+            "before": 0,
+            "fromReason": null,
+            "reason": "Recomputed from changed placement findings using the same published score formula",
+            "ruleId": "overallScore",
+            "toReason": null
+          },
+          {
+            "after": {
+              "acceptableZones": [
+                "N",
+                "NW",
+                "NE",
+                "S",
+                "SE",
+                "SW",
+                "CENTER"
+              ],
+              "forbiddenZones": [],
+              "idealZones": [
+                "W",
+                "E"
+              ],
+              "recommendedZone": "W",
+              "room": "dining",
+              "severity": "minor",
+              "verdict": "acceptable",
+              "zone": "SE"
+            },
+            "before": {
+              "acceptableZones": [
+                "N",
+                "NW",
+                "NE",
+                "S"
+              ],
+              "forbiddenZones": [
+                "SW",
+                "CENTER",
+                "SE"
+              ],
+              "idealZones": [
+                "W",
+                "E"
+              ],
+              "recommendedZone": "W",
+              "room": "dining",
+              "severity": "moderate",
+              "verdict": "defect",
+              "zone": "SE"
+            },
+            "fromReason": {
+              "classification": "convention",
+              "reason": "The SE belongs to the kitchen fire; convention seats the dining just outside it (W/E) rather than inside the Agneya corner.",
+              "verified": false
+            },
+            "reason": "Published placement rule changed between the retained snapshots",
+            "ruleId": "placement/dining/SE",
+            "toReason": {
+              "classification": "convention",
+              "reason": "Published placement rule for dining: ideal zones [\"W\",\"E\"], otherwise acceptable unless forbidden"
+            }
+          },
+          {
+            "after": {
+              "acceptableZones": [
+                "NW",
+                "W",
+                "SE",
+                "CENTER"
+              ],
+              "forbiddenZones": [
+                "SW",
+                "S"
+              ],
+              "idealZones": [
+                "N",
+                "NE",
+                "E"
+              ],
+              "recommendedZone": "NE",
+              "room": "living",
+              "severity": "minor",
+              "verdict": "acceptable",
+              "zone": "CENTER"
+            },
+            "before": {
+              "acceptableZones": [
+                "NW",
+                "W",
+                "SE"
+              ],
+              "forbiddenZones": [
+                "SW",
+                "CENTER",
+                "S"
+              ],
+              "idealZones": [
+                "N",
+                "NE",
+                "E"
+              ],
+              "recommendedZone": "NE",
+              "room": "living",
+              "severity": "moderate",
+              "verdict": "defect",
+              "zone": "CENTER"
+            },
+            "fromReason": {
+              "classification": "convention",
+              "reason": "Dense furniture over the Brahmasthan boxes in the open centre (convention).",
+              "verified": false
+            },
+            "reason": "Published placement rule changed between the retained snapshots",
+            "ruleId": "placement/living/CENTER",
+            "toReason": {
+              "classification": "convention",
+              "reason": "Published placement rule for living: ideal zones [\"N\",\"NE\",\"E\"], otherwise acceptable unless forbidden"
+            }
+          },
+          {
+            "after": [],
+            "before": [
+              {
+                "action": "Keep the Brahmasthan uncluttered and well lit. A copper yantra overhead is the customary remedy object for this zone.",
+                "priority": 1,
+                "remedyClassification": "convention",
+                "remedyKey": "vastu.remedy.zone.CENTER",
+                "remedyParams": {},
+                "remedySource": "modern Vastu remedial practice (not a classical verse)",
+                "remedyType": "modern remedial practice",
+                "room": "living",
+                "severity": "moderate",
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "tradition": "traditional Vastu convention",
+                "verified": false,
+                "zone": "CENTER"
+              },
+              {
+                "action": "A copper pyramid and white quartz in the north-east part of the room are the customary remedy objects for the South-East zone.",
+                "priority": 2,
+                "remedyClassification": "convention",
+                "remedyKey": "vastu.remedy.zone.SE",
+                "remedyParams": {},
+                "remedySource": "modern Vastu remedial practice (not a classical verse)",
+                "remedyType": "modern remedial practice",
+                "room": "dining",
+                "severity": "moderate",
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "tradition": "traditional Vastu convention",
+                "verified": false,
+                "zone": "SE"
+              }
+            ],
+            "fromReason": null,
+            "reason": "Recomputed from changed placement findings using the same published score formula",
+            "ruleId": "remedies",
+            "toReason": null
+          },
+          {
+            "after": {
+              "classification": "convention",
+              "computed": false,
+              "defect": null,
+              "ideal": null,
+              "remedy": null,
+              "remedyClassification": null,
+              "remedySource": null,
+              "room": "dining",
+              "ruleProvenance": {
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "verified": false
+              },
+              "severity": "minor",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verdict": "acceptable",
+              "verified": false,
+              "zone": "SE",
+              "zoneSource": "stated"
+            },
+            "before": {
+              "classification": "convention",
+              "computed": false,
+              "defect": "dining in SE is a Vastu defect (moderate).",
+              "ideal": "W",
+              "remedy": "A copper pyramid and white quartz in the north-east part of the room are the customary remedy objects for the South-East zone.",
+              "remedyClassification": "convention",
+              "remedySource": "modern Vastu remedial practice (not a classical verse)",
+              "room": "dining",
+              "ruleProvenance": {
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "verified": false
+              },
+              "severity": "moderate",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verdict": "defect",
+              "verified": false,
+              "zone": "SE",
+              "zoneSource": "stated"
+            },
+            "fromReason": {
+              "classification": "convention",
+              "reason": "The SE belongs to the kitchen fire; convention seats the dining just outside it (W/E) rather than inside the Agneya corner.",
+              "verified": false
+            },
+            "reason": "Published placement rule changed between the retained snapshots",
+            "ruleId": "roomByRoom/dining/SE/1",
+            "toReason": {
+              "classification": "convention",
+              "reason": "Published placement rule for dining: ideal zones [\"W\",\"E\"], otherwise acceptable unless forbidden"
+            }
+          },
+          {
+            "after": {
+              "classification": "convention",
+              "computed": false,
+              "defect": null,
+              "ideal": null,
+              "remedy": null,
+              "remedyClassification": null,
+              "remedySource": null,
+              "room": "living",
+              "ruleProvenance": {
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "verified": false
+              },
+              "severity": "minor",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verdict": "acceptable",
+              "verified": false,
+              "zone": "CENTER",
+              "zoneSource": "stated"
+            },
+            "before": {
+              "classification": "convention",
+              "computed": false,
+              "defect": "living in CENTER is a Vastu defect (moderate).",
+              "ideal": "NE",
+              "remedy": "Keep the Brahmasthan uncluttered and well lit. A copper yantra overhead is the customary remedy object for this zone.",
+              "remedyClassification": "convention",
+              "remedySource": "modern Vastu remedial practice (not a classical verse)",
+              "room": "living",
+              "ruleProvenance": {
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "verified": false
+              },
+              "severity": "moderate",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verdict": "defect",
+              "verified": false,
+              "zone": "CENTER",
+              "zoneSource": "stated"
+            },
+            "fromReason": {
+              "classification": "convention",
+              "reason": "Dense furniture over the Brahmasthan boxes in the open centre (convention).",
+              "verified": false
+            },
+            "reason": "Published placement rule changed between the retained snapshots",
+            "ruleId": "roomByRoom/living/CENTER/0",
+            "toReason": {
+              "classification": "convention",
+              "reason": "Published placement rule for living: ideal zones [\"N\",\"NE\",\"E\"], otherwise acceptable unless forbidden"
+            }
+          },
+          {
+            "after": "facing not declared; 2 room(s) audited. No significant Vastu doshas detected. Overall compliance 60/100 (grade C — Average (Madhyama)). Mixed agreement with the scored placement rules (Vedika index 55-69).",
+            "before": "facing not declared; 2 room(s) audited. 0 severe and 2 moderate doshas detected. Overall compliance 0/100 (grade E — Defective (Adhama)). Very low agreement with the scored placement rules (Vedika index 0-39).",
+            "fromReason": null,
+            "reason": "Recomputed from changed placement findings using the same published score formula",
+            "ruleId": "summary",
+            "toReason": null
+          },
+          {
+            "after": [
+              {
+                "deity": "Ishanya (Shiva)",
+                "element": "water",
+                "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "NE"
+              },
+              {
+                "deity": "Kubera",
+                "element": "water",
+                "importance": "moderate (governance — N / S; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "N"
+              },
+              {
+                "deity": "Vayavya (Vayu)",
+                "element": "air",
+                "importance": "peripheral (utility — W / NW; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "NW"
+              },
+              {
+                "deity": "Varuna",
+                "element": "water",
+                "importance": "peripheral (utility — W / NW; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "W"
+              },
+              {
+                "deity": "Nairutya (Pitru / Nirrti)",
+                "element": "earth",
+                "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "SW"
+              },
+              {
+                "deity": "Yama",
+                "element": "fire",
+                "importance": "moderate (governance — N / S; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "S"
+              },
+              {
+                "deity": "Agneya (Agni)",
+                "element": "fire",
+                "importance": "high (element-critical — SE fire / E sun-gate; Vedika index)",
+                "rooms": [
+                  "dining"
+                ],
+                "status": "caution",
+                "worstSeverity": "minor",
+                "zone": "SE"
+              },
+              {
+                "deity": "Indra",
+                "element": "air",
+                "importance": "high (element-critical — SE fire / E sun-gate; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "E"
+              },
+              {
+                "deity": "Brahma (Brahmasthan)",
+                "element": "ether",
+                "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+                "rooms": [
+                  "living"
+                ],
+                "status": "caution",
+                "worstSeverity": "minor",
+                "zone": "CENTER"
+              }
+            ],
+            "before": [
+              {
+                "deity": "Ishanya (Shiva)",
+                "element": "water",
+                "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "NE"
+              },
+              {
+                "deity": "Kubera",
+                "element": "water",
+                "importance": "moderate (governance — N / S; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "N"
+              },
+              {
+                "deity": "Vayavya (Vayu)",
+                "element": "air",
+                "importance": "peripheral (utility — W / NW; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "NW"
+              },
+              {
+                "deity": "Varuna",
+                "element": "water",
+                "importance": "peripheral (utility — W / NW; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "W"
+              },
+              {
+                "deity": "Nairutya (Pitru / Nirrti)",
+                "element": "earth",
+                "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "SW"
+              },
+              {
+                "deity": "Yama",
+                "element": "fire",
+                "importance": "moderate (governance — N / S; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "S"
+              },
+              {
+                "deity": "Agneya (Agni)",
+                "element": "fire",
+                "importance": "high (element-critical — SE fire / E sun-gate; Vedika index)",
+                "rooms": [
+                  "dining"
+                ],
+                "status": "caution",
+                "worstSeverity": "moderate",
+                "zone": "SE"
+              },
+              {
+                "deity": "Indra",
+                "element": "air",
+                "importance": "high (element-critical — SE fire / E sun-gate; Vedika index)",
+                "rooms": [],
+                "status": "vacant",
+                "worstSeverity": "none",
+                "zone": "E"
+              },
+              {
+                "deity": "Brahma (Brahmasthan)",
+                "element": "ether",
+                "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+                "rooms": [
+                  "living"
+                ],
+                "status": "caution",
+                "worstSeverity": "moderate",
+                "zone": "CENTER"
+              }
+            ],
+            "fromReason": null,
+            "reason": "Recomputed from changed placement findings using the same published score formula",
+            "ruleId": "zoneCompliance",
+            "toReason": null
+          }
+        ],
+        "fromAssessment": {
+          "defects": [
+            {
+              "issue": "living in CENTER is a Vastu defect (moderate).",
+              "remedy": "Keep the Brahmasthan uncluttered and well lit. A copper yantra overhead is the customary remedy object for this zone.",
+              "remedyClassification": "convention",
+              "remedySource": "modern Vastu remedial practice (not a classical verse)",
+              "remedyType": "modern remedial practice",
+              "room": "living",
+              "severity": "moderate",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verified": false,
+              "zone": "CENTER"
+            },
+            {
+              "issue": "dining in SE is a Vastu defect (moderate).",
+              "remedy": "A copper pyramid and white quartz in the north-east part of the room are the customary remedy objects for the South-East zone.",
+              "remedyClassification": "convention",
+              "remedySource": "modern Vastu remedial practice (not a classical verse)",
+              "remedyType": "modern remedial practice",
+              "room": "dining",
+              "severity": "moderate",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verified": false,
+              "zone": "SE"
+            }
+          ],
+          "directionalScoreMessage": "The directional score needs a declared facing. Supply plot.facing; the placement score alone is not a complete directional assessment.",
+          "directionalScoreStatus": "needs_facing",
+          "elementBalance": {
+            "counts": {
+              "air": 0,
+              "earth": 0,
+              "ether": 1,
+              "fire": 1,
+              "water": 0
+            },
+            "missing": [
+              "earth",
+              "water",
+              "air"
+            ],
+            "note": "The direction↔element mapping is later Vastu tradition (only NE-water is verse-defensible); the balance verdict is a proprietary Vedika rule, not a classical verse.",
+            "tradition": "proprietary Vedika index over pancha-bhuta convention",
+            "verdict": "Elemental imbalance — only 1 of the four functional elements present (earth/water/air missing). By convention, rebalance by siting the missing-element rooms in their customary zones.",
+            "verified": false
+          },
+          "facing": {
+            "auspicious": null,
+            "code": null,
+            "declared": null,
+            "deity": null,
+            "grade": null,
+            "note": null,
+            "sanskrit": null,
+            "tradition": "traditional Vastu convention (mukha grading is not a specific classical verse)",
+            "verified": false
+          },
+          "grade": "E",
+          "gradeLabel": "Defective (Adhama)",
+          "gradeReasons": [
+            "The directional score needs a declared facing. Supply plot.facing; the placement score alone is not a complete directional assessment."
+          ],
+          "gradeStatus": "provisional",
+          "input": {
+            "outlineTraced": false,
+            "plotDeclared": false,
+            "roomCount": 2,
+            "zonesFromGeometry": false
+          },
+          "meta": {
+            "basis": "Brihat Samhita Ch. 53 (Iyer, PD, verified) + traditional Vastu convention + proprietary Vedika index",
+            "engine": "vedika-intelligence",
+            "source": "vedika-ephemeris"
+          },
+          "method": "plan-analyze",
+          "notAssessed": [],
+          "overallScore": 0,
+          "plotShape": null,
+          "provenance": {
+            "convention": "facing/mukha grade, master-bedroom→SW and other sub-direction placements, pancha-bhuta element mapping",
+            "note": "Per-row `verified:true` marks a verse-backed rule; `verified:false` with a `tradition` label marks convention. We do not present convention as a classical verse.",
+            "proprietary": "zone/room weighting and the 0-100 compliance index",
+            "verifiedVerseRules": "room placement (pooja→NE, kitchen→SE, store→SW, treasury→NW) — Brihat Samhita 53.118 (Iyer 1884, PD)"
+          },
+          "remedies": [
+            {
+              "action": "Keep the Brahmasthan uncluttered and well lit. A copper yantra overhead is the customary remedy object for this zone.",
+              "priority": 1,
+              "remedyClassification": "convention",
+              "remedyKey": "vastu.remedy.zone.CENTER",
+              "remedyParams": {},
+              "remedySource": "modern Vastu remedial practice (not a classical verse)",
+              "remedyType": "modern remedial practice",
+              "room": "living",
+              "severity": "moderate",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verified": false,
+              "zone": "CENTER"
+            },
+            {
+              "action": "A copper pyramid and white quartz in the north-east part of the room are the customary remedy objects for the South-East zone.",
+              "priority": 2,
+              "remedyClassification": "convention",
+              "remedyKey": "vastu.remedy.zone.SE",
+              "remedyParams": {},
+              "remedySource": "modern Vastu remedial practice (not a classical verse)",
+              "remedyType": "modern remedial practice",
+              "room": "dining",
+              "severity": "moderate",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verified": false,
+              "zone": "SE"
+            }
+          ],
+          "roomByRoom": [
+            {
+              "classification": "convention",
+              "computed": false,
+              "defect": "living in CENTER is a Vastu defect (moderate).",
+              "ideal": "NE",
+              "remedy": "Keep the Brahmasthan uncluttered and well lit. A copper yantra overhead is the customary remedy object for this zone.",
+              "remedyClassification": "convention",
+              "remedySource": "modern Vastu remedial practice (not a classical verse)",
+              "room": "living",
+              "ruleProvenance": {
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "verified": false
+              },
+              "severity": "moderate",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verdict": "defect",
+              "verified": false,
+              "zone": "CENTER",
+              "zoneSource": "stated"
+            },
+            {
+              "classification": "convention",
+              "computed": false,
+              "defect": "dining in SE is a Vastu defect (moderate).",
+              "ideal": "W",
+              "remedy": "A copper pyramid and white quartz in the north-east part of the room are the customary remedy objects for the South-East zone.",
+              "remedyClassification": "convention",
+              "remedySource": "modern Vastu remedial practice (not a classical verse)",
+              "room": "dining",
+              "ruleProvenance": {
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "verified": false
+              },
+              "severity": "moderate",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verdict": "defect",
+              "verified": false,
+              "zone": "SE",
+              "zoneSource": "stated"
+            }
+          ],
+          "rulesVersion": "vastu-rules-2026-10-04",
+          "scoreDisclaimer": "This grade describes Vedika's proprietary 0-100 placement index. It is not calibrated to measured health, financial, structural or safety outcomes, and it is not a classical verse or professional assessment. It does not establish that a building is safe or unsafe. For building changes, consult a licensed structural engineer or architect.",
+          "sources": [
+            "Brihat Samhita Ch. 53 (Varahamihira, trans. N. C. Iyer 1884, public domain) — VERIFIED, for the rules it actually covers (room placement, water, gates, trees, site-level, foundation)",
+            "Manasara Ch. 38 (trans. P. K. Acharya 1933, public domain) — VERIFIED, door-pada scheme only",
+            "Traditional & later Vastu convention — facing grades, master-bedroom→SW, sub-direction usage (NOT a specific classical verse)",
+            "Proprietary Vedika compliance index — zone/room weighting and the 0-100 score (modern synthesis, not a classical text)"
+          ],
+          "summary": "facing not declared; 2 room(s) audited. 0 severe and 2 moderate doshas detected. Overall compliance 0/100 (grade E — Defective (Adhama)). Very low agreement with the scored placement rules (Vedika index 0-39).",
+          "system": "vastu",
+          "zoneCompliance": [
+            {
+              "deity": "Ishanya (Shiva)",
+              "element": "water",
+              "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "NE"
+            },
+            {
+              "deity": "Kubera",
+              "element": "water",
+              "importance": "moderate (governance — N / S; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "N"
+            },
+            {
+              "deity": "Vayavya (Vayu)",
+              "element": "air",
+              "importance": "peripheral (utility — W / NW; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "NW"
+            },
+            {
+              "deity": "Varuna",
+              "element": "water",
+              "importance": "peripheral (utility — W / NW; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "W"
+            },
+            {
+              "deity": "Nairutya (Pitru / Nirrti)",
+              "element": "earth",
+              "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "SW"
+            },
+            {
+              "deity": "Yama",
+              "element": "fire",
+              "importance": "moderate (governance — N / S; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "S"
+            },
+            {
+              "deity": "Agneya (Agni)",
+              "element": "fire",
+              "importance": "high (element-critical — SE fire / E sun-gate; Vedika index)",
+              "rooms": [
+                "dining"
+              ],
+              "status": "caution",
+              "worstSeverity": "moderate",
+              "zone": "SE"
+            },
+            {
+              "deity": "Indra",
+              "element": "air",
+              "importance": "high (element-critical — SE fire / E sun-gate; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "E"
+            },
+            {
+              "deity": "Brahma (Brahmasthan)",
+              "element": "ether",
+              "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+              "rooms": [
+                "living"
+              ],
+              "status": "caution",
+              "worstSeverity": "moderate",
+              "zone": "CENTER"
+            }
+          ]
+        },
+        "fromVersion": "vastu-rules-2026-10-04",
+        "inputHash": "81dea69bdc0e421d5b01d51b1ea7a91ed161c09b7ab5600190ae6d85ff8958bb",
+        "operation": "plan/analyze",
+        "retainedVersions": 4,
+        "scope": "room-placement rules; both assessments use the same geometry normalization",
+        "toAssessment": {
+          "defects": [],
+          "directionalScoreMessage": "The directional score needs a declared facing. Supply plot.facing; the placement score alone is not a complete directional assessment.",
+          "directionalScoreStatus": "needs_facing",
+          "elementBalance": {
+            "counts": {
+              "air": 0,
+              "earth": 0,
+              "ether": 1,
+              "fire": 1,
+              "water": 0
+            },
+            "missing": [
+              "earth",
+              "water",
+              "air"
+            ],
+            "note": "The direction↔element mapping is later Vastu tradition (only NE-water is verse-defensible); the balance verdict is a proprietary Vedika rule, not a classical verse.",
+            "tradition": "proprietary Vedika index over pancha-bhuta convention",
+            "verdict": "Elemental imbalance — only 1 of the four functional elements present (earth/water/air missing). By convention, rebalance by siting the missing-element rooms in their customary zones.",
+            "verified": false
+          },
+          "facing": {
+            "auspicious": null,
+            "code": null,
+            "declared": null,
+            "deity": null,
+            "grade": null,
+            "note": null,
+            "sanskrit": null,
+            "tradition": "traditional Vastu convention (mukha grading is not a specific classical verse)",
+            "verified": false
+          },
+          "grade": "C",
+          "gradeLabel": "Average (Madhyama)",
+          "gradeReasons": [
+            "The directional score needs a declared facing. Supply plot.facing; the placement score alone is not a complete directional assessment."
+          ],
+          "gradeStatus": "provisional",
+          "input": {
+            "outlineTraced": false,
+            "plotDeclared": false,
+            "roomCount": 2,
+            "zonesFromGeometry": false
+          },
+          "meta": {
+            "basis": "Brihat Samhita Ch. 53 (Iyer, PD, verified) + traditional Vastu convention + proprietary Vedika index",
+            "engine": "vedika-intelligence",
+            "source": "vedika-ephemeris"
+          },
+          "method": "plan-analyze",
+          "notAssessed": [],
+          "overallScore": 60,
+          "plotShape": null,
+          "provenance": {
+            "convention": "facing/mukha grade, master-bedroom→SW and other sub-direction placements, pancha-bhuta element mapping",
+            "note": "Per-row `verified:true` marks a verse-backed rule; `verified:false` with a `tradition` label marks convention. We do not present convention as a classical verse.",
+            "proprietary": "zone/room weighting and the 0-100 compliance index",
+            "verifiedVerseRules": "room placement (pooja→NE, kitchen→SE, store→SW, treasury→NW) — Brihat Samhita 53.118 (Iyer 1884, PD)"
+          },
+          "remedies": [],
+          "roomByRoom": [
+            {
+              "classification": "convention",
+              "computed": false,
+              "defect": null,
+              "ideal": null,
+              "remedy": null,
+              "remedyClassification": null,
+              "remedySource": null,
+              "room": "living",
+              "ruleProvenance": {
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "verified": false
+              },
+              "severity": "minor",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verdict": "acceptable",
+              "verified": false,
+              "zone": "CENTER",
+              "zoneSource": "stated"
+            },
+            {
+              "classification": "convention",
+              "computed": false,
+              "defect": null,
+              "ideal": null,
+              "remedy": null,
+              "remedyClassification": null,
+              "remedySource": null,
+              "room": "dining",
+              "ruleProvenance": {
+                "source": "traditional Vastu convention (not a specific classical verse)",
+                "verified": false
+              },
+              "severity": "minor",
+              "source": "traditional Vastu convention (not a specific classical verse)",
+              "tradition": "traditional Vastu convention",
+              "verdict": "acceptable",
+              "verified": false,
+              "zone": "SE",
+              "zoneSource": "stated"
+            }
+          ],
+          "rulesVersion": "vastu-rules-2026-10-20",
+          "scoreDisclaimer": "This grade describes Vedika's proprietary 0-100 placement index. It is not calibrated to measured health, financial, structural or safety outcomes, and it is not a classical verse or professional assessment. It does not establish that a building is safe or unsafe. For building changes, consult a licensed structural engineer or architect.",
+          "sources": [
+            "Brihat Samhita Ch. 53 (Varahamihira, trans. N. C. Iyer 1884, public domain) — VERIFIED, for the rules it actually covers (room placement, water, gates, trees, site-level, foundation)",
+            "Manasara Ch. 38 (trans. P. K. Acharya 1933, public domain) — VERIFIED, door-pada scheme only",
+            "Traditional & later Vastu convention — facing grades, master-bedroom→SW, sub-direction usage (NOT a specific classical verse)",
+            "Proprietary Vedika compliance index — zone/room weighting and the 0-100 score (modern synthesis, not a classical text)"
+          ],
+          "summary": "facing not declared; 2 room(s) audited. No significant Vastu doshas detected. Overall compliance 60/100 (grade C — Average (Madhyama)). Mixed agreement with the scored placement rules (Vedika index 55-69).",
+          "system": "vastu",
+          "zoneCompliance": [
+            {
+              "deity": "Ishanya (Shiva)",
+              "element": "water",
+              "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "NE"
+            },
+            {
+              "deity": "Kubera",
+              "element": "water",
+              "importance": "moderate (governance — N / S; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "N"
+            },
+            {
+              "deity": "Vayavya (Vayu)",
+              "element": "air",
+              "importance": "peripheral (utility — W / NW; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "NW"
+            },
+            {
+              "deity": "Varuna",
+              "element": "water",
+              "importance": "peripheral (utility — W / NW; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "W"
+            },
+            {
+              "deity": "Nairutya (Pitru / Nirrti)",
+              "element": "earth",
+              "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "SW"
+            },
+            {
+              "deity": "Yama",
+              "element": "fire",
+              "importance": "moderate (governance — N / S; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "S"
+            },
+            {
+              "deity": "Agneya (Agni)",
+              "element": "fire",
+              "importance": "high (element-critical — SE fire / E sun-gate; Vedika index)",
+              "rooms": [
+                "dining"
+              ],
+              "status": "caution",
+              "worstSeverity": "minor",
+              "zone": "SE"
+            },
+            {
+              "deity": "Indra",
+              "element": "air",
+              "importance": "high (element-critical — SE fire / E sun-gate; Vedika index)",
+              "rooms": [],
+              "status": "vacant",
+              "worstSeverity": "none",
+              "zone": "E"
+            },
+            {
+              "deity": "Brahma (Brahmasthan)",
+              "element": "ether",
+              "importance": "maha (sacred core — NE / Brahmasthan / SW; Vedika index)",
+              "rooms": [
+                "living"
+              ],
+              "status": "caution",
+              "worstSeverity": "minor",
+              "zone": "CENTER"
+            }
+          ]
+        },
+        "toVersion": "vastu-rules-2026-10-20"
+      },
+      "meta": {
+        "engine": "vedika-intelligence",
+        "mode": "sandbox",
+        "version": "2.1.0"
+      },
+      "success": true
+    },
+    "vastu__rules_versions": {
+      "billing": {
+        "charged": 0
+      },
+      "data": {
+        "currentVersion": "vastu-rules-2026-10-20",
+        "retainedVersions": 4,
+        "scope": "room-placement rules; geometry normalization is shared",
+        "scoringVersion": "vedika-placement-index-v2",
+        "versions": [
+          "vastu-rules-2026-09-23",
+          "vastu-rules-2026-10-04",
+          "vastu-rules-2026-10-18",
+          "vastu-rules-2026-10-20"
+        ]
       },
       "success": true
     }

@@ -21,6 +21,11 @@ import Foundation
 /// the iOS-only Core Location bridge, is a separate, optional source of real
 /// heading samples for callers that want `"true"` or `"magnetic"` instead —
 /// see its header.)
+///
+/// `floorIndex` is the storey this scan records on every room (ground 0,
+/// basements -1 to -3, upper floors 1 to 9), as `floorIndex` does in the web
+/// and Kotlin models. `FloorMerge` stacks scans by this recorded index and
+/// never relabels one, so each floor of a building must be scanned with its own.
 public final class RoomCaptureModel {
 
     public static let closeSnapM = 0.3
@@ -30,6 +35,9 @@ public final class RoomCaptureModel {
     public static let minNorthMs: Int64 = 3000
     public static let maxRooms = 64
     public static let maxCorners = 256
+    /// Recorded storey range, the same as the web model and the capture-merge API.
+    public static let minFloorIndex = -3
+    public static let maxFloorIndex = 9
 
     /// Room names the server's `normalize_room_type` recognises. Mirrors
     /// `ROOM_LABELS` in `room-capture-webxr.js` and the Kotlin port.
@@ -64,6 +72,7 @@ public final class RoomCaptureModel {
     }
 
     private let captureId: String
+    public let floorIndex: Int
     private let now: () -> Int64
     private let startedAt: Int64
     private var phase: Phase = .outline
@@ -73,8 +82,9 @@ public final class RoomCaptureModel {
     private var north: [(Vec3, Int64)] = []
     private var northStart: Int64?
 
-    public init(_ captureId: String, now: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) {
+    public init(_ captureId: String, now: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }, floorIndex: Int = 0) {
         self.captureId = captureId
+        self.floorIndex = floorIndex
         self.now = now
         self.startedAt = now()
     }
@@ -176,6 +186,9 @@ public final class RoomCaptureModel {
     /// The `RoomCaptureSession` `RoomCaptureGeometry.buildRoomCapture` takes.
     public func toSession(device: RoomCaptureDeviceInput? = nil, endedAt: Int64? = nil) throws -> RoomCaptureSession {
         let ended = endedAt ?? now()
+        guard (Self.minFloorIndex...Self.maxFloorIndex).contains(floorIndex) else {
+            throw RoomCaptureError("Floor index must be an integer from \(Self.minFloorIndex) to \(Self.maxFloorIndex)")
+        }
         guard phase != .outline else { throw RoomCaptureError("Trace and close the outline first") }
         if let current { throw RoomCaptureError("Finish the room \"\(current.label ?? "unnamed")\" first") }
         guard northReady else { throw RoomCaptureError("Set north first") }
@@ -192,7 +205,7 @@ public final class RoomCaptureModel {
             outline: RoomCaptureOutlineInput(source: "traced", worldCorners: outline.worldCorners, closingTap: outline.closingTap),
             rooms: rooms.map { room in
                 RoomCaptureRoomInput(
-                    id: room.id, label: room.label, labelSource: room.labelSource, floorIndex: 0, heightM: nil,
+                    id: room.id, label: room.label, labelSource: room.labelSource, floorIndex: floorIndex, heightM: nil,
                     worldCorners: room.worldCorners, closingTap: room.closingTap, openings: room.openings
                 )
             },

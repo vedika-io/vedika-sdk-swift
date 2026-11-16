@@ -5356,6 +5356,15 @@ public struct VastuDetailedFloorPlanAuditDataNotAssessedItem {
     public var graded: Bool { vastuBool(raw["graded"])! }
 }
 
+public struct VastuDetailedFloorPlanAuditDataGradedAsItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var roomType: String { (raw["roomType"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var gradedAs: String { (raw["gradedAs"] as? String)! }
+    public var basis: String { (raw["basis"] as? String)! }
+}
+
 public struct VastuDetailedFloorPlanAuditDataReceipt {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -5463,6 +5472,15 @@ public struct VastuFloorPlanAuditDataNotAssessedItem {
     public var zone: String { (raw["zone"] as? String)! }
     public var reason: String { (raw["reason"] as? String)! }
     public var graded: Bool { vastuBool(raw["graded"])! }
+}
+
+public struct VastuFloorPlanAuditDataGradedAsItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var roomType: String { (raw["roomType"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var gradedAs: String { (raw["gradedAs"] as? String)! }
+    public var basis: String { (raw["basis"] as? String)! }
 }
 
 public struct VastuFloorPlanAuditDataReceipt {
@@ -5672,6 +5690,7 @@ public struct VastuPlanAuditDataRoomByRoomItem {
     public var statedZone: String? { (raw["statedZone"] as? String) }
     public var zoneConflict: Bool? { vastuBool(raw["zoneConflict"]) }
     public var mappedItems: [VastuPlanAuditDataRoomByRoomItemMappedItemsItem]? { (raw["mappedItems"] as? [[String: Any]])?.map { VastuPlanAuditDataRoomByRoomItemMappedItemsItem(raw: $0) } }
+    public var classifiedAs: String? { (raw["classifiedAs"] as? String) }
 }
 
 public struct VastuPlanAuditDataDefectsItemMappedItemsItem {
@@ -5966,6 +5985,13 @@ public struct VastuPlanImportDataDimensionsItem {
     public var confidence: Double { vastuDouble(raw["confidence"])! }
 }
 
+public struct VastuPlanImportDataWarningsItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var code: String { (raw["code"] as? String)! }
+    public var message: String { (raw["message"] as? String)! }
+}
+
 public struct VastuPlanImportDataNeedsReviewItem {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -6104,6 +6130,37 @@ public struct VastuPlanImportDxfDataReviewReasonsItem {
     public init(raw: [String: Any]) { self.raw = raw }
     public var id: String? { (raw["id"] as? String) }
     public var reason: String { (raw["reason"] as? String)! }
+}
+
+public struct VastuPlanImportDxfDataStoreysItemBounds {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var minX: Double { vastuDouble(raw["minX"])! }
+    public var minY: Double { vastuDouble(raw["minY"])! }
+    public var maxX: Double { vastuDouble(raw["maxX"])! }
+    public var maxY: Double { vastuDouble(raw["maxY"])! }
+}
+
+public struct VastuPlanImportDxfDataStoreysItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var index: Int { vastuInt(raw["index"])! }
+    public var label: String { (raw["label"] as? String)! }
+    public var roomCount: Int { vastuInt(raw["roomCount"])! }
+    public var bounds: VastuPlanImportDxfDataStoreysItemBounds { VastuPlanImportDxfDataStoreysItemBounds(raw: raw["bounds"] as! [String: Any]) }
+}
+
+public struct VastuPlanImportDxfDataWarningsItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var code: String { (raw["code"] as? String)! }
+    public var roomId: String? { (raw["roomId"] as? String) }
+    public var name: String? { (raw["name"] as? String) }
+    public var severity: String? { (raw["severity"] as? String) }
+    public var storey: String? { (raw["storey"] as? String) }
+    public var index: Int? { vastuInt(raw["index"]) }
+    public var suggestedTrueNorthDeg: Double? { vastuDouble(raw["suggestedTrueNorthDeg"]) }
+    public var detail: String { (raw["detail"] as? String)! }
 }
 
 public struct VastuPlanImportIfcDataBuildingsItem {
@@ -6825,6 +6882,15 @@ public struct VastuScansDeleteDataDeletionReceipt {
     public var receiptHash: String { (raw["receiptHash"] as? String)! }
 }
 
+public struct VastuSingleRoomAuditDataGradedAsItem {
+    public let raw: [String: Any]
+    public init(raw: [String: Any]) { self.raw = raw }
+    public var roomType: String { (raw["roomType"] as? String)! }
+    public var zone: String { (raw["zone"] as? String)! }
+    public var gradedAs: String { (raw["gradedAs"] as? String)! }
+    public var basis: String { (raw["basis"] as? String)! }
+}
+
 public struct VastuSpecializedAuditDataFindingsItem {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
@@ -7441,6 +7507,7 @@ public struct VastuDetailedFloorPlanAuditData: VastuData {
     public var scoring: VastuDetailedFloorPlanAuditDataScoring { VastuDetailedFloorPlanAuditDataScoring(raw: raw["scoring"] as! [String: Any]) }
     public var completeness: VastuDetailedFloorPlanAuditDataCompleteness { VastuDetailedFloorPlanAuditDataCompleteness(raw: raw["completeness"] as! [String: Any]) }
     public var notAssessed: [VastuDetailedFloorPlanAuditDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuDetailedFloorPlanAuditDataNotAssessedItem(raw: $0) } }
+    public var gradedAs: [VastuDetailedFloorPlanAuditDataGradedAsItem]? { (raw["gradedAs"] as? [[String: Any]])?.map { VastuDetailedFloorPlanAuditDataGradedAsItem(raw: $0) } }
     public var scoreNote: String? { (raw["scoreNote"] as? String) }
     public var merchantCatalogId: String? { (raw["merchantCatalogId"] as? String) }
     public var merchantCatalogRevision: Int? { vastuInt(raw["merchantCatalogRevision"]) }
@@ -7636,6 +7703,7 @@ public struct VastuFloorPlanAuditData: VastuData {
     public var scoring: VastuFloorPlanAuditDataScoring { VastuFloorPlanAuditDataScoring(raw: raw["scoring"] as! [String: Any]) }
     public var textParse: VastuFloorPlanAuditDataTextParse? { (raw["textParse"] as? [String: Any]).map { VastuFloorPlanAuditDataTextParse(raw: $0) } }
     public var notAssessed: [VastuFloorPlanAuditDataNotAssessedItem]? { (raw["notAssessed"] as? [[String: Any]])?.map { VastuFloorPlanAuditDataNotAssessedItem(raw: $0) } }
+    public var gradedAs: [VastuFloorPlanAuditDataGradedAsItem]? { (raw["gradedAs"] as? [[String: Any]])?.map { VastuFloorPlanAuditDataGradedAsItem(raw: $0) } }
     public var scoreNote: String? { (raw["scoreNote"] as? String) }
     public var merchantCatalogId: String? { (raw["merchantCatalogId"] as? String) }
     public var merchantCatalogRevision: Int? { vastuInt(raw["merchantCatalogRevision"]) }
@@ -8035,6 +8103,7 @@ public struct VastuPlanImportData: VastuData {
     public var scale: VastuPlanImportDataScale { VastuPlanImportDataScale(raw: raw["scale"] as! [String: Any]) }
     public var dimensions: [VastuPlanImportDataDimensionsItem] { (raw["dimensions"] as! [[String: Any]]).map { VastuPlanImportDataDimensionsItem(raw: $0) } }
     public var confidence: [String: Any] { (raw["confidence"] as? [String: Any])! }
+    public var warnings: [VastuPlanImportDataWarningsItem]? { (raw["warnings"] as? [[String: Any]])?.map { VastuPlanImportDataWarningsItem(raw: $0) } }
     public var needsReview: [VastuPlanImportDataNeedsReviewItem] { (raw["needsReview"] as! [[String: Any]]).map { VastuPlanImportDataNeedsReviewItem(raw: $0) } }
     public var analysisReady: Bool { vastuBool(raw["analysisReady"])! }
     public var source: VastuPlanImportDataSource { VastuPlanImportDataSource(raw: raw["source"] as! [String: Any]) }
@@ -8059,6 +8128,8 @@ public struct VastuPlanImportDxfData: VastuData {
     public var inputUnits: String? { (raw["inputUnits"] as? String) }
     public var metresPerInputUnit: Double? { vastuDouble(raw["metresPerInputUnit"]) }
     public var canonicalUnits: String? { (raw["canonicalUnits"] as? String) }
+    public var storeys: [VastuPlanImportDxfDataStoreysItem]? { (raw["storeys"] as? [[String: Any]])?.map { VastuPlanImportDxfDataStoreysItem(raw: $0) } }
+    public var warnings: [VastuPlanImportDxfDataWarningsItem]? { (raw["warnings"] as? [[String: Any]])?.map { VastuPlanImportDxfDataWarningsItem(raw: $0) } }
 }
 
 public struct VastuPlanImportIfcData: VastuData {
@@ -8673,6 +8744,7 @@ public struct VastuSingleRoomAuditData: VastuData {
     public let raw: [String: Any]
     public init(raw: [String: Any]) { self.raw = raw }
     public var input: [String: Any] { (raw["input"] as? [String: Any])! }
+    public var gradedAs: [VastuSingleRoomAuditDataGradedAsItem]? { (raw["gradedAs"] as? [[String: Any]])?.map { VastuSingleRoomAuditDataGradedAsItem(raw: $0) } }
     public var compliance: String { (raw["compliance"] as? String)! }
     public var severity: String { (raw["severity"] as? String)! }
     public var recommendedZone: String? { (raw["recommendedZone"] as? String) }
